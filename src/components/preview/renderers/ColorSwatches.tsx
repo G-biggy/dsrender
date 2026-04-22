@@ -117,7 +117,9 @@ function ColorCard({
         style={{
           height: '80px',
           backgroundColor: value,
-          border: needsBorder ? '1px solid #E5E7EB' : 'none',
+          borderTop: needsBorder ? '1px solid #E5E7EB' : 'none',
+          borderLeft: needsBorder ? '1px solid #E5E7EB' : 'none',
+          borderRight: needsBorder ? '1px solid #E5E7EB' : 'none',
           borderBottom: '1px solid #E5E7EB',
           position: 'relative',
         }}

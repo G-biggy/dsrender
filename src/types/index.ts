@@ -8,6 +8,9 @@ export type SectionType =
   | 'motion'
   | 'components'
   | 'icons'
+  | 'effects'
+  | 'layout'
+  | 'zindex'
   | 'unknown';
 
 export interface DesignTokenDocument {

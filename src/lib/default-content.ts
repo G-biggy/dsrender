@@ -100,4 +100,36 @@ export const DEFAULT_CONTENT = `# My Design System
 | md | 768px | Tablet |
 | lg | 1024px | Desktop |
 | xl | 1280px | Large desktop |
+
+---
+
+## Motion & Animation
+
+### Easing Curves
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| \`ease-default\` | ease-out | General UI transitions |
+| \`ease-enter\` | cubic-bezier(0, 0, 0.2, 1) | Elements entering view |
+| \`ease-exit\` | cubic-bezier(0.4, 0, 1, 1) | Elements leaving view |
+| \`ease-bounce\` | cubic-bezier(0.34, 1.56, 0.64, 1) | Playful interactions |
+| \`ease-smooth\` | cubic-bezier(0.4, 0, 0.2, 1) | Smooth state changes |
+
+### Durations
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| \`duration-instant\` | 100ms | Micro-feedback (hover, focus) |
+| \`duration-fast\` | 150ms | Button presses, toggles |
+| \`duration-normal\` | 250ms | Panels, dropdowns |
+| \`duration-slow\` | 400ms | Page transitions, modals |
+| \`duration-slower\` | 600ms | Complex reveals |
+
+### Transitions
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| \`transition-fade\` | 200ms ease-out | Opacity changes |
+| \`transition-slide\` | 300ms cubic-bezier(0.4, 0, 0.2, 1) | Slide in/out |
+| \`transition-scale\` | 250ms cubic-bezier(0.34, 1.56, 0.64, 1) | Scale up with bounce |
 `;

@@ -10,6 +10,10 @@ import { BreakpointRuler } from './renderers/BreakpointRuler';
 import { ContentRenderer } from './renderers/ContentRenderer';
 import { ComponentPreview } from './renderers/ComponentPreview';
 import { IconSizes } from './renderers/IconSizes';
+import { MotionPreview } from './renderers/MotionPreview';
+import { EffectsPreview } from './renderers/EffectsPreview';
+import { LayoutPreview } from './renderers/LayoutPreview';
+import { ZIndexPreview } from './renderers/ZIndexPreview';
 
 const TOKEN_RENDERERS: Record<string, React.ComponentType<{ section: TokenSection }>> = {
   colors: ColorSwatches,
@@ -20,6 +24,10 @@ const TOKEN_RENDERERS: Record<string, React.ComponentType<{ section: TokenSectio
   breakpoints: BreakpointRuler,
   components: ComponentPreview,
   icons: IconSizes,
+  motion: MotionPreview,
+  effects: EffectsPreview,
+  layout: LayoutPreview,
+  zindex: ZIndexPreview,
 };
 
 export function PreviewPane({ document }: { document: DesignTokenDocument | null }) {
