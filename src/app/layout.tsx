@@ -19,35 +19,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" style={{ height: "100%" }} suppressHydrationWarning>
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if (typeof window !== 'undefined' && !window.matchMedia) {
-                window.matchMedia = function() {
-                  return { matches: false, media: '', addListener: function(){}, removeListener: function(){}, addEventListener: function(){}, removeEventListener: function(){}, dispatchEvent: function(){ return false; } };
-                };
-              }
-              if (typeof window !== 'undefined' && window.matchMedia) {
-                var mql = window.matchMedia('(max-width:0px)');
-                if (mql && !mql.addListener) {
-                  MediaQueryList.prototype.addListener = function(cb) { this.addEventListener('change', cb); };
-                  MediaQueryList.prototype.removeListener = function(cb) { this.removeEventListener('change', cb); };
-                }
-              }
+              (function() {
+                try {
+                  var t = localStorage.getItem('dsrender-theme');
+                  if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch(e) {}
+                try {
+                  if (window.matchMedia) {
+                    var mql = window.matchMedia('(max-width:0px)');
+                    if (mql && !mql.addListener) {
+                      MediaQueryList.prototype.addListener = function(cb) { this.addEventListener('change', cb); };
+                      MediaQueryList.prototype.removeListener = function(cb) { this.removeEventListener('change', cb); };
+                    }
+                  }
+                } catch(e) {}
+              })();
             `,
           }}
         />
       </head>
       <body
-        className={inter.variable}
-        style={{
-          margin: 0,
-          height: "100%",
-          fontFamily: 'var(--font-inter), system-ui, sans-serif',
-          overflow: "hidden",
-        }}
+        className={`${inter.variable} m-0 h-full font-[var(--font-inter),system-ui,sans-serif] overflow-hidden`}
       >
         {children}
       </body>

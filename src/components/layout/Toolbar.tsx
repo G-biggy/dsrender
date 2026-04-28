@@ -1,68 +1,202 @@
 'use client';
 
-import { RotateCcw } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { RotateCcw, Download, MessageSquarePlus, Info, Sun, Moon, ChevronDown, ExternalLink, Mail, X } from 'lucide-react';
+import { SAMPLE_FILES } from '@/lib/samples';
+import { cn } from '@/lib/utils';
 
 interface ToolbarProps {
   onReset: () => void;
+  onLoadSample: (file: string) => void;
+  onDownloadHTML: () => void;
+  onShowWelcome: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
-export function Toolbar({ onReset }: ToolbarProps) {
+const GITHUB_REPO = 'G-biggy/dsrender';
+
+function ToolbarButton({
+  onClick,
+  title,
+  children,
+  className,
+}: {
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 16px',
-        height: '44px',
-        borderBottom: '1px solid #E5E7EB',
-        backgroundColor: '#FFFFFF',
-        flexShrink: 0,
-      }}
-    >
-      {/* Logo */}
-      <div
-        style={{
-          fontSize: '15px',
-          fontWeight: 700,
-          color: '#111827',
-          fontFamily: 'monospace',
-          letterSpacing: '-0.02em',
-        }}
+    <div className="relative group">
+      <button
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 bg-transparent border border-gray-200 dark:border-gray-700 rounded-md cursor-pointer transition-colors',
+          'hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200',
+          className
+        )}
       >
-        dsrender
+        {children}
+      </button>
+      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2 py-1 text-[11px] leading-tight whitespace-nowrap rounded bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-50">
+        {title}
+      </span>
+    </div>
+  );
+}
+
+export function Toolbar({ onReset, onLoadSample, onDownloadHTML, onShowWelcome, theme, onToggleTheme }: ToolbarProps) {
+  const [sampleOpen, setSampleOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sampleOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setSampleOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [sampleOpen]);
+
+  const [showRequestModal, setShowRequestModal] = useState(false);
+
+  const openGitHubIssue = useCallback(() => {
+    const body = [
+      '**Token type / section:**\n',
+      '**Example markdown (just the failing segment, not your full file):**',
+      '```',
+      '',
+      '```\n',
+      '**Expected rendering:**\n',
+      '**What actually happened:**\n',
+      '---',
+      '_Only paste the specific section that didn\'t render. Do not share your full design system file — GitHub issues are public._',
+    ].join('\n');
+    window.open(
+      `https://github.com/${GITHUB_REPO}/issues/new?title=${encodeURIComponent('Renderer request: [Type]')}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent('renderer-request')}`,
+      '_blank'
+    );
+    setShowRequestModal(false);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-between px-4 h-11 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
+      {/* Logo */}
+      <div className="relative group">
+        <div className="text-[15px] font-bold text-gray-900 dark:text-gray-100 font-mono tracking-tight cursor-default">
+          dsrender
+        </div>
+        <span className="absolute top-full left-0 mt-1.5 px-2 py-1 text-[11px] leading-tight whitespace-nowrap rounded bg-gray-800 dark:bg-gray-200 text-gray-100 dark:text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-50">
+          Design System Render
+        </span>
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <button
-          onClick={onReset}
-          title="Reset to default"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 10px',
-            fontSize: '12px',
-            color: '#6B7280',
-            background: 'none',
-            border: '1px solid #E5E7EB',
-            borderRadius: '6px',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#D1D5DB';
-            e.currentTarget.style.color = '#374151';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#E5E7EB';
-            e.currentTarget.style.color = '#6B7280';
-          }}
-        >
+      <div className="flex items-center gap-2">
+        {/* Sample selector */}
+        <div ref={dropdownRef} className="relative">
+          <ToolbarButton onClick={() => setSampleOpen(!sampleOpen)} title="Load a sample design system">
+            Samples
+            <ChevronDown size={12} />
+          </ToolbarButton>
+          {sampleOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-[180px] z-50">
+              {SAMPLE_FILES.map((sample) => (
+                <button
+                  key={sample.file}
+                  onClick={() => {
+                    onLoadSample(sample.file);
+                    setSampleOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-[13px] text-gray-700 dark:text-gray-300 bg-transparent border-none cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  {sample.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Dark mode toggle */}
+        <ToolbarButton onClick={onToggleTheme} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
+          {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+        </ToolbarButton>
+
+        {/* Download HTML */}
+        <ToolbarButton onClick={onDownloadHTML} title="Download as HTML">
+          <Download size={14} />
+        </ToolbarButton>
+
+        {/* Request a renderer */}
+        <ToolbarButton onClick={() => setShowRequestModal(true)} title="Request a renderer">
+          <MessageSquarePlus size={14} />
+        </ToolbarButton>
+
+        {/* Info */}
+        <ToolbarButton onClick={onShowWelcome} title="About dsrender">
+          <Info size={14} />
+        </ToolbarButton>
+
+        {/* Reset */}
+        <ToolbarButton onClick={onReset} title="Clear editor">
           <RotateCcw size={14} />
-          Reset
-        </button>
+        </ToolbarButton>
       </div>
+
+      {/* Request a renderer modal */}
+      {showRequestModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowRequestModal(false); }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-[90%] p-6 relative">
+            <button
+              onClick={() => setShowRequestModal(false)}
+              className="absolute top-3 right-3 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 bg-transparent border-none cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <MessageSquarePlus size={20} />
+              Request a renderer
+            </h3>
+
+            <div className="flex flex-col gap-3 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p>
+                If a token type or section didn&apos;t render as expected, send us the{' '}
+                <strong>specific section</strong>{' '}that needs support. Please only include the
+                relevant segment, not your full design system.
+              </p>
+
+              <div className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg p-3 flex flex-col gap-1.5">
+                <p className="m-0"><strong className="text-gray-500 dark:text-gray-400">Your privacy matters.</strong>{' '}Any design tokens you share will be used solely to improve dsrender and will not be stored, shared, or used for any other purpose.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 mt-5">
+              <a
+                href="mailto:dsrender@ghayyath.com?subject=dsrender%20%E2%80%94%20Renderer%20request&body=Token%20type%20%2F%20section%3A%0A%0AExample%20markdown%20(just%20the%20failing%20segment)%3A%0A%0AExpected%20rendering%3A%0A%0AWhat%20actually%20happened%3A"
+                className="flex items-center justify-center gap-2 py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg no-underline transition-colors hover:bg-gray-800 dark:hover:bg-gray-200"
+                onClick={() => setShowRequestModal(false)}
+              >
+                <Mail size={14} />
+                Send request via email
+              </a>
+              <button
+                onClick={openGitHubIssue}
+                className="flex items-center justify-center gap-2 py-2 text-xs text-gray-400 dark:text-gray-500 bg-transparent border-none cursor-pointer transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <ExternalLink size={12} />
+                Or open a public GitHub issue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

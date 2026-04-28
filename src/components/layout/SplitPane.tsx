@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 interface SplitPaneProps {
   left: React.ReactNode;
@@ -13,7 +14,6 @@ export function SplitPane({ left, right }: SplitPaneProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Hydration-safe: read localStorage only after mount
   useEffect(() => {
     const saved = localStorage.getItem('dsrender-split');
     if (saved) setSplitRatio(parseFloat(saved));
@@ -59,42 +59,30 @@ export function SplitPane({ left, right }: SplitPaneProps) {
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="flex flex-col h-full">
         {/* Tab bar */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid #E5E7EB',
-            backgroundColor: '#FFFFFF',
-          }}
-        >
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           {(['editor', 'preview'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1,
-                padding: '10px',
-                fontSize: '13px',
-                fontWeight: 600,
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                color: activeTab === tab ? '#111827' : '#9CA3AF',
-                borderBottom: activeTab === tab ? '2px solid #111827' : '2px solid transparent',
-                textTransform: 'capitalize',
-              }}
+              className={cn(
+                'flex-1 py-2.5 text-[13px] font-semibold border-none bg-transparent cursor-pointer capitalize',
+                activeTab === tab
+                  ? 'text-gray-900 dark:text-gray-100 border-b-2 border-b-gray-900 dark:border-b-gray-100'
+                  : 'text-gray-400 dark:text-gray-500 border-b-2 border-b-transparent'
+              )}
             >
               {tab}
             </button>
           ))}
         </div>
         {/* Content */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <div style={{ display: activeTab === 'editor' ? 'block' : 'none', height: '100%' }}>
+        <div className="flex-1 overflow-hidden">
+          <div className={cn('h-full', activeTab === 'editor' ? 'block' : 'hidden')}>
             {left}
           </div>
-          <div style={{ display: activeTab === 'preview' ? 'block' : 'none', height: '100%', overflow: 'auto' }}>
+          <div className={cn('h-full overflow-auto', activeTab === 'preview' ? 'block' : 'hidden')}>
             {right}
           </div>
         </div>
@@ -105,36 +93,29 @@ export function SplitPane({ left, right }: SplitPaneProps) {
   return (
     <div
       ref={containerRef}
+      className="h-full overflow-hidden"
       style={{
         display: 'grid',
         gridTemplateColumns: `${splitRatio * 100}% 4px ${(1 - splitRatio) * 100 - 0.4}%`,
-        height: '100%',
-        overflow: 'hidden',
         userSelect: isDragging ? 'none' : 'auto',
       }}
     >
-      {/* Left pane - Editor */}
-      <div style={{ overflow: 'hidden', minWidth: 0 }}>{left}</div>
+      {/* Left pane */}
+      <div className="overflow-hidden min-w-0">{left}</div>
 
       {/* Resize handle */}
       <div
         onMouseDown={handleMouseDown}
-        style={{
-          cursor: 'col-resize',
-          backgroundColor: isDragging ? '#3B82F6' : '#E5E7EB',
-          transition: isDragging ? 'none' : 'background-color 0.15s',
-          zIndex: 10,
-        }}
-        onMouseEnter={(e) => {
-          if (!isDragging) e.currentTarget.style.backgroundColor = '#D1D5DB';
-        }}
-        onMouseLeave={(e) => {
-          if (!isDragging) e.currentTarget.style.backgroundColor = '#E5E7EB';
-        }}
+        className={cn(
+          'cursor-col-resize z-10 transition-colors',
+          isDragging
+            ? 'bg-blue-500'
+            : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+        )}
       />
 
-      {/* Right pane - Preview */}
-      <div style={{ overflow: 'hidden', minWidth: 0 }}>{right}</div>
+      {/* Right pane */}
+      <div className="overflow-hidden min-w-0">{right}</div>
     </div>
   );
 }

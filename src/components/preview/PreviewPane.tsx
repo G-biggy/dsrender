@@ -33,16 +33,7 @@ const TOKEN_RENDERERS: Record<string, React.ComponentType<{ section: TokenSectio
 export function PreviewPane({ document }: { document: DesignTokenDocument | null }) {
   if (!document) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          color: '#9CA3AF',
-          fontSize: '14px',
-        }}
-      >
+      <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">
         Start typing to see your design system
       </div>
     );
@@ -50,29 +41,16 @@ export function PreviewPane({ document }: { document: DesignTokenDocument | null
 
   return (
     <div
-      style={{
-        padding: '32px',
-        overflowY: 'auto',
-        height: '100%',
-        backgroundColor: '#FAFAFA',
-      }}
+      id="preview-pane"
+      className="p-8 overflow-y-auto h-full bg-gray-50 dark:bg-gray-950"
     >
       {/* Document title */}
-      <h1
-        style={{
-          fontSize: '28px',
-          fontWeight: 700,
-          color: '#111827',
-          marginBottom: '32px',
-          paddingBottom: '16px',
-          borderBottom: '2px solid #E5E7EB',
-        }}
-      >
+      <h1 className="text-[28px] font-bold text-gray-900 dark:text-gray-100 mb-8 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
         {document.title}
       </h1>
 
       {/* Sections */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+      <div className="flex flex-col gap-10">
         {document.sections.map((section, i) => (
           <SectionBlock key={i} section={section} />
         ))}
@@ -89,65 +67,38 @@ function SectionBlock({ section }: { section: TokenSection }) {
   const hasContent = section.content.length > 0;
   const hasSubsections = section.subsections.length > 0;
 
-  // Skip completely empty sections
   if (!hasTokens && !hasContent && !hasSubsections) return null;
 
   return (
     <div>
       {/* Section heading */}
-      <h2
-        style={{
-          fontSize: '20px',
-          fontWeight: 600,
-          color: '#374151',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
+      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
         {section.type !== 'unknown' && (
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 500,
-              color: '#9CA3AF',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              backgroundColor: '#F3F4F6',
-              padding: '2px 8px',
-              borderRadius: '4px',
-            }}
-          >
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
             {section.type}
           </span>
         )}
         {section.heading}
       </h2>
 
-      {/* Components renderer — works off content/subsections, not tokens */}
       {section.type === 'components' && (hasContent || hasSubsections) && (
         <ComponentPreview section={section} />
       )}
 
-      {/* Icons renderer — combines size tokens + content tables */}
       {section.type === 'icons' && (hasContent || hasSubsections || hasTokens) && (
         <IconSizes section={section} />
       )}
 
-      {/* Token renderer for other recognized types */}
       {TokenRenderer && hasTokens && section.type !== 'components' && section.type !== 'icons' && (
-        <div style={{ marginBottom: hasContent ? '20px' : 0 }}>
+        <div className={hasContent ? 'mb-5' : ''}>
           <TokenRenderer section={section} />
         </div>
       )}
 
-      {/* Content blocks for non-token content or unknown sections */}
-      {(!TokenRenderer || section.type === 'unknown') && hasContent && (
+      {hasContent && (!hasTokens || section.type === 'unknown') && section.type !== 'components' && section.type !== 'icons' && (
         <ContentRenderer blocks={section.content} />
       )}
 
-      {/* Render subsections that have their own content but no tokens */}
       {section.type !== 'components' && section.type !== 'icons' && hasSubsections && section.subsections.map((sub, i) => (
         <SubsectionBlock key={i} subsection={sub} parentType={section.type} />
       ))}
@@ -161,31 +112,23 @@ function SubsectionBlock({ subsection, parentType }: { subsection: TokenSection;
   const hasContent = subsection.content.length > 0;
   const hasNestedSubs = subsection.subsections.length > 0;
 
-  // If parent already rendered these tokens via its renderer, skip
   if (TokenRenderer && parentType === subsection.type) return null;
 
   if (!hasTokens && !hasContent && !hasNestedSubs) return null;
 
   return (
-    <div style={{ marginTop: '20px' }}>
-      <h3
-        style={{
-          fontSize: '16px',
-          fontWeight: 600,
-          color: '#4B5563',
-          marginBottom: '12px',
-        }}
-      >
+    <div className="mt-5">
+      <h3 className="text-base font-semibold text-gray-600 dark:text-gray-400 mb-3">
         {subsection.heading}
       </h3>
 
       {TokenRenderer && hasTokens && (
-        <div style={{ marginBottom: hasContent ? '12px' : 0 }}>
+        <div className={hasContent ? 'mb-3' : ''}>
           <TokenRenderer section={subsection} />
         </div>
       )}
 
-      {(!TokenRenderer) && hasContent && (
+      {hasContent && !hasTokens && (
         <ContentRenderer blocks={subsection.content} />
       )}
 

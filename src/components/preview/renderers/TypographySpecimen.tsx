@@ -6,27 +6,15 @@ import type { TokenSection, TokenEntry } from '@/types';
 const SAMPLE_TEXT = 'The quick brown fox jumps over the lazy dog';
 
 const WEIGHT_MAP: Record<string, number> = {
-  thin: 100,
-  hairline: 100,
-  extralight: 200,
-  ultralight: 200,
-  light: 300,
-  regular: 400,
-  normal: 400,
-  medium: 500,
-  semibold: 600,
-  demibold: 600,
-  bold: 700,
-  extrabold: 800,
-  ultrabold: 800,
-  black: 900,
-  heavy: 900,
+  thin: 100, hairline: 100, extralight: 200, ultralight: 200,
+  light: 300, regular: 400, normal: 400, medium: 500,
+  semibold: 600, demibold: 600, bold: 700, extrabold: 800,
+  ultrabold: 800, black: 900, heavy: 900,
 };
 
 function parseWeight(value: string): number {
   const num = parseInt(value);
   if (!isNaN(num)) return num;
-  // Try matching named weights like "Bold", "SemiBold", "400 (Regular)"
   const cleaned = value.replace(/[^a-zA-Z]/g, '').toLowerCase();
   return WEIGHT_MAP[cleaned] ?? 400;
 }
@@ -40,16 +28,12 @@ interface ParsedTypography {
 }
 
 function parseTypographyEntry(entry: TokenEntry, sectionFont?: string): ParsedTypography {
-  const result: ParsedTypography = {
-    role: entry.name,
-  };
+  const result: ParsedTypography = { role: entry.name };
 
-  // The value might be the size directly
   if (/^\d/.test(entry.value)) {
     result.size = entry.value;
   }
 
-  // Check extra fields
   const allFields = { ...entry.extra };
   if (entry.value && !/^\d/.test(entry.value)) {
     allFields['value'] = entry.value;
@@ -66,12 +50,10 @@ function parseTypographyEntry(entry: TokenEntry, sectionFont?: string): ParsedTy
     } else if (k === 'line height' || k === 'line-height' || k === 'lineheight') {
       result.lineHeight = val;
     } else if (k.includes('desktop') || k.includes('1280')) {
-      // Responsive: use desktop size
       result.size = val;
     }
   }
 
-  // Use section-level font if entry doesn't have one
   if (!result.font && sectionFont) {
     result.font = sectionFont;
   }
@@ -80,7 +62,6 @@ function parseTypographyEntry(entry: TokenEntry, sectionFont?: string): ParsedTy
 }
 
 function extractSectionFont(section: TokenSection): string | undefined {
-  // Look for "Font family: X" in the raw markdown
   const fontMatch = section.rawMarkdown?.match(/\*\*Font family:\*\*\s*(.+)/i)
     || section.rawMarkdown?.match(/Font family:\s*(.+)/i);
   if (fontMatch) return fontMatch[1].trim();
@@ -93,7 +74,6 @@ function useGoogleFont(fontName: string | undefined) {
   useEffect(() => {
     if (!fontName) return;
 
-    // Skip system fonts
     const systemFonts = ['helvetica', 'arial', 'system-ui', 'sans-serif', 'serif', 'monospace'];
     if (systemFonts.some((f) => fontName.toLowerCase().includes(f))) {
       setLoaded(true);
@@ -128,7 +108,6 @@ export function TypographySpecimen({ section }: { section: TokenSection }) {
     ...section.subsections.flatMap((sub) => sub.tokens),
   ];
 
-  // Filter to only entries that have size info
   const specimens = allTokens
     .map((t) => parseTypographyEntry(t, sectionFont))
     .filter((t) => t.size);
@@ -136,33 +115,22 @@ export function TypographySpecimen({ section }: { section: TokenSection }) {
   if (specimens.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="flex flex-col gap-6">
       {specimens.map((spec, i) => (
-        <div key={i} style={{ borderBottom: '1px solid #F3F4F6', paddingBottom: '20px' }}>
+        <div key={i} className="border-b border-gray-100 dark:border-gray-800 pb-5">
           <div
+            className="text-gray-900 dark:text-gray-100 mb-2 break-words"
             style={{
               fontFamily: spec.font ? `"${spec.font}", sans-serif` : 'inherit',
               fontSize: spec.size,
               fontWeight: spec.weight ? parseWeight(spec.weight) : 400,
               lineHeight: spec.lineHeight || 1.3,
-              color: '#1F2937',
-              marginBottom: '8px',
-              overflowWrap: 'break-word',
             }}
           >
             {SAMPLE_TEXT}
           </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: '16px',
-              flexWrap: 'wrap',
-              fontSize: '12px',
-              color: '#9CA3AF',
-              fontFamily: 'monospace',
-            }}
-          >
-            <span style={{ color: '#6B7280', fontWeight: 600 }}>{spec.role}</span>
+          <div className="flex gap-4 flex-wrap text-xs text-gray-400 dark:text-gray-500 font-mono">
+            <span className="text-gray-500 dark:text-gray-400 font-semibold">{spec.role}</span>
             {spec.font && <span>{spec.font}</span>}
             {spec.size && <span>{spec.size}</span>}
             {spec.weight && <span>w{spec.weight}</span>}

@@ -10,7 +10,6 @@ export function ColorSwatches({ section }: { section: TokenSection }) {
     ...section.subsections.flatMap((sub) => sub.tokens),
   ];
 
-  // Group by subsection
   const groups: { heading: string; tokens: typeof allTokens }[] = [];
 
   if (section.tokens.length > 0) {
@@ -30,30 +29,15 @@ export function ColorSwatches({ section }: { section: TokenSection }) {
   if (groups.length === 0 && allTokens.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="flex flex-col gap-6">
       {groups.map((group, gi) => (
         <div key={gi}>
           {group.heading && (
-            <h4
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: '#6B7280',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '12px',
-              }}
-            >
+            <h4 className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
               {group.heading}
             </h4>
           )}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-              gap: '12px',
-            }}
-          >
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
             {group.tokens.map((token, i) => {
               const colorValue = token.value.trim();
               if (!isColor(colorValue)) return null;
@@ -98,83 +82,32 @@ function ColorCard({
   return (
     <div
       onClick={handleCopy}
-      style={{
-        cursor: 'pointer',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        border: '1px solid #E5E7EB',
-        background: '#FFFFFF',
-        transition: 'box-shadow 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = 'none';
-      }}
+      className="cursor-pointer rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-shadow hover:shadow-md"
     >
       <div
+        className="h-20 border-b border-gray-200 dark:border-gray-700 relative"
         style={{
-          height: '80px',
           backgroundColor: value,
           borderTop: needsBorder ? '1px solid #E5E7EB' : 'none',
           borderLeft: needsBorder ? '1px solid #E5E7EB' : 'none',
           borderRight: needsBorder ? '1px solid #E5E7EB' : 'none',
-          borderBottom: '1px solid #E5E7EB',
-          position: 'relative',
         }}
       >
         {copied && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.5)',
-              color: '#fff',
-              fontSize: '12px',
-              fontWeight: 600,
-            }}
-          >
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-xs font-semibold">
             Copied!
           </div>
         )}
       </div>
-      <div style={{ padding: '8px 10px' }}>
-        <div
-          style={{
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#1F2937',
-            fontFamily: 'monospace',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
+      <div className="px-2.5 py-2">
+        <div className="text-xs font-semibold text-gray-900 dark:text-gray-100 font-mono whitespace-nowrap overflow-hidden text-ellipsis">
           {name}
         </div>
-        <div
-          style={{
-            fontSize: '11px',
-            color: '#6B7280',
-            fontFamily: 'monospace',
-            marginTop: '2px',
-          }}
-        >
+        <div className="text-[11px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
           {value}
         </div>
         {usage && (
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#9CA3AF',
-              marginTop: '4px',
-              lineHeight: 1.3,
-            }}
-          >
+          <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 leading-tight">
             {usage}
           </div>
         )}

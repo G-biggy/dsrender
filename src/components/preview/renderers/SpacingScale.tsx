@@ -22,64 +22,27 @@ export function SpacingScale({ section }: { section: TokenSection }) {
   if (items.length === 0) return null;
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '12px',
-        alignItems: 'flex-end',
-      }}
-    >
+    <div className="flex flex-wrap gap-3 items-end">
       {items.map((item, i) => {
         const px = item.px ?? 0;
-        // Clamp visual size between 4px and 120px for display
         const displaySize = Math.min(Math.max(px, 4), 120);
 
         return (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            {/* Actual-sized block */}
+          <div key={i} className="flex flex-col items-center gap-1.5">
             <div
+              className="bg-orange-500 opacity-80 min-w-1 min-h-1"
               style={{
                 width: `${displaySize}px`,
                 height: `${displaySize}px`,
-                backgroundColor: '#F97316',
                 borderRadius: Math.min(4, displaySize / 4),
-                opacity: 0.8,
-                minWidth: '4px',
-                minHeight: '4px',
               }}
             />
-            {/* Value label */}
-            <div
-              style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#374151',
-                fontFamily: 'monospace',
-                textAlign: 'center',
-              }}
-            >
+            <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 font-mono text-center">
               {px}
             </div>
-            {/* Token name */}
             <div
-              style={{
-                fontSize: '10px',
-                color: '#9CA3AF',
-                textAlign: 'center',
-                maxWidth: `${Math.max(displaySize, 40)}px`,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
+              className="text-[10px] text-gray-400 dark:text-gray-500 text-center overflow-hidden text-ellipsis whitespace-nowrap"
+              style={{ maxWidth: `${Math.max(displaySize, 40)}px` }}
             >
               {item.name}
             </div>

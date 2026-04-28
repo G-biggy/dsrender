@@ -14,11 +14,9 @@ interface MotionToken {
 function parseMotionToken(name: string, value: string, usage?: string): MotionToken {
   const lower = value.toLowerCase().trim();
 
-  // Try to extract duration (e.g., "150ms", "0.3s", "300ms ease-out")
   let duration: number | null = null;
   let easing: string | null = null;
 
-  // Duration patterns
   const msMatch = lower.match(/(\d+)\s*ms/);
   const sMatch = lower.match(/([\d.]+)\s*s(?!ec)/);
   if (msMatch) {
@@ -27,7 +25,6 @@ function parseMotionToken(name: string, value: string, usage?: string): MotionTo
     duration = parseFloat(sMatch[1]) * 1000;
   }
 
-  // Easing patterns
   const cubicMatch = lower.match(/cubic-bezier\s*\(\s*([\d.]+)\s*,\s*([\d.-]+)\s*,\s*([\d.]+)\s*,\s*([\d.-]+)\s*\)/);
   if (cubicMatch) {
     easing = `cubic-bezier(${cubicMatch[1]}, ${cubicMatch[2]}, ${cubicMatch[3]}, ${cubicMatch[4]})`;
@@ -42,30 +39,25 @@ function parseMotionToken(name: string, value: string, usage?: string): MotionTo
   } else if (/ease/.test(lower)) {
     easing = 'ease';
   } else if (/spring/.test(lower)) {
-    easing = 'cubic-bezier(0.34, 1.56, 0.64, 1)'; // spring approximation
+    easing = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
   }
 
-  // If value is purely an easing name with no duration
   if (!duration && !easing) {
     const pureEasing = lower.replace(/[^a-z0-9().,-\s]/g, '').trim();
     if (['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear'].includes(pureEasing)) {
       easing = pureEasing;
-    } else if (cubicMatch) {
-      // already handled above
     }
   }
 
-  // If name hints at what it is
   if (!easing && !duration) {
     const nameHints = name.toLowerCase();
     if (/easing|curve/.test(nameHints)) {
       easing = value.trim();
     }
     if (/duration|delay|speed|timing/.test(nameHints)) {
-      // Try parsing as raw number (assume ms)
       const num = parseFloat(value);
       if (!isNaN(num)) {
-        duration = num > 10 ? num : num * 1000; // > 10 = ms, else seconds
+        duration = num > 10 ? num : num * 1000;
       }
     }
   }
@@ -78,7 +70,6 @@ function getCubicBezierPoints(easing: string): [number, number, number, number] 
   if (match) {
     return [parseFloat(match[1]), parseFloat(match[2]), parseFloat(match[3]), parseFloat(match[4])];
   }
-  // Named easings to cubic-bezier
   switch (easing) {
     case 'ease': return [0.25, 0.1, 0.25, 1.0];
     case 'ease-in': return [0.42, 0, 1, 1];
@@ -95,7 +86,6 @@ function EasingCurveSVG({ easing, size = 64 }: { easing: string; size?: number }
   const w = size - pad * 2;
   const h = size - pad * 2;
 
-  // Control points in SVG coords (y is inverted)
   const p0 = { x: pad, y: pad + h };
   const p1 = { x: pad + x1 * w, y: pad + h - y1 * h };
   const p2 = { x: pad + x2 * w, y: pad + h - y2 * h };
@@ -103,12 +93,9 @@ function EasingCurveSVG({ easing, size = 64 }: { easing: string; size?: number }
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Grid */}
-      <rect x={pad} y={pad} width={w} height={h} fill="none" stroke="#E5E7EB" strokeWidth="1" />
-      {/* Control point lines */}
+      <rect x={pad} y={pad} width={w} height={h} fill="none" stroke="currentColor" strokeWidth="1" className="text-gray-200 dark:text-gray-700" />
       <line x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y} stroke="#C7D2FE" strokeWidth="1" strokeDasharray="2 2" />
       <line x1={p3.x} y1={p3.y} x2={p2.x} y2={p2.y} stroke="#C7D2FE" strokeWidth="1" strokeDasharray="2 2" />
-      {/* Curve */}
       <path
         d={`M ${p0.x} ${p0.y} C ${p1.x} ${p1.y}, ${p2.x} ${p2.y}, ${p3.x} ${p3.y}`}
         fill="none"
@@ -116,55 +103,27 @@ function EasingCurveSVG({ easing, size = 64 }: { easing: string; size?: number }
         strokeWidth="2"
         strokeLinecap="round"
       />
-      {/* Control points */}
       <circle cx={p1.x} cy={p1.y} r="3" fill="#818CF8" />
       <circle cx={p2.x} cy={p2.y} r="3" fill="#818CF8" />
-      {/* Start/end */}
-      <circle cx={p0.x} cy={p0.y} r="2.5" fill="#374151" />
-      <circle cx={p3.x} cy={p3.y} r="2.5" fill="#374151" />
+      <circle cx={p0.x} cy={p0.y} r="2.5" fill="currentColor" className="text-gray-700 dark:text-gray-300" />
+      <circle cx={p3.x} cy={p3.y} r="2.5" fill="currentColor" className="text-gray-700 dark:text-gray-300" />
     </svg>
   );
 }
 
 function AnimatedDot({ easing, duration, playing }: { easing: string; duration: number; playing: boolean }) {
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '28px',
-        backgroundColor: '#F9FAFB',
-        borderRadius: '14px',
-        position: 'relative',
-        overflow: 'hidden',
-        border: '1px solid #E5E7EB',
-      }}
-    >
+    <div className="w-full h-7 bg-gray-50 dark:bg-gray-800 rounded-full relative overflow-hidden border border-gray-200 dark:border-gray-700">
       {/* Track line */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '14px',
-          right: '14px',
-          height: '1px',
-          backgroundColor: '#D1D5DB',
-        }}
-      />
+      <div className="absolute top-1/2 left-3.5 right-3.5 h-px bg-gray-300 dark:bg-gray-600" />
       {/* Dot */}
       <div
+        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-indigo-500 shadow-[0_1px_3px_rgba(99,102,241,0.4)]"
         style={{
-          position: 'absolute',
-          top: '50%',
-          transform: 'translateY(-50%)',
           left: playing ? 'calc(100% - 22px)' : '6px',
-          width: '16px',
-          height: '16px',
-          borderRadius: '50%',
-          backgroundColor: '#6366F1',
           transition: playing
             ? `left ${duration}ms ${easing}`
             : 'left 0ms',
-          boxShadow: '0 1px 3px rgba(99, 102, 241, 0.4)',
         }}
       />
     </div>
@@ -174,23 +133,10 @@ function AnimatedDot({ easing, duration, playing }: { easing: string; duration: 
 function DurationBar({ duration, maxDuration }: { duration: number; maxDuration: number }) {
   const widthPercent = Math.max((duration / maxDuration) * 100, 8);
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '6px',
-        backgroundColor: '#F3F4F6',
-        borderRadius: '3px',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-sm overflow-hidden">
       <div
-        style={{
-          width: `${widthPercent}%`,
-          height: '100%',
-          backgroundColor: '#F97316',
-          borderRadius: '3px',
-          transition: 'width 0.3s ease',
-        }}
+        className="h-full bg-orange-500 rounded-sm transition-[width] duration-300 ease-in-out"
+        style={{ width: `${widthPercent}%` }}
       />
     </div>
   );
@@ -216,7 +162,6 @@ function MotionCard({
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setPlaying(true);
-        // Auto-reset: wait for animation to finish + a brief hold at the end
         resetTimer.current = setTimeout(() => {
           setPlaying(false);
         }, animDuration + 800);
@@ -225,56 +170,16 @@ function MotionCard({
   }, [animDuration]);
 
   return (
-    <div
-      style={{
-        backgroundColor: '#FFFFFF',
-        border: '1px solid #E5E7EB',
-        borderRadius: '10px',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        minWidth: '200px',
-        flex: '1 1 200px',
-        maxWidth: '320px',
-      }}
-    >
-      {/* Header: token name + play button */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '13px',
-            fontWeight: 600,
-            color: '#374151',
-          }}
-        >
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-[10px] p-4 flex flex-col gap-2.5 min-w-[200px] flex-[1_1_200px] max-w-[320px]">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
           {token.name}
         </div>
         {isAnimatable && (
           <button
             onClick={handlePlay}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '26px',
-              height: '26px',
-              padding: 0,
-              backgroundColor: '#EEF2FF',
-              border: '1px solid #C7D2FE',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              color: '#6366F1',
-              transition: 'background-color 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E0E7FF')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#EEF2FF')}
+            className="flex items-center justify-center w-[26px] h-[26px] p-0 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-md cursor-pointer text-indigo-500 transition-colors hover:bg-indigo-100 dark:hover:bg-indigo-900"
             title="Play animation"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
@@ -284,28 +189,16 @@ function MotionCard({
         )}
       </div>
 
-      {/* Easing curve visualization */}
+      {/* Easing curve */}
       {hasEasing && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="flex items-center gap-3">
           <EasingCurveSVG easing={token.easing!} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                fontFamily: 'monospace',
-                color: '#6B7280',
-              }}
-            >
+          <div className="flex flex-col gap-0.5">
+            <div className="text-[11px] font-mono text-gray-500 dark:text-gray-400">
               {token.easing}
             </div>
             {hasDuration && (
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                  color: '#9CA3AF',
-                }}
-              >
+              <div className="text-[11px] font-mono text-gray-400 dark:text-gray-500">
                 {token.duration}ms
               </div>
             )}
@@ -313,17 +206,11 @@ function MotionCard({
         </div>
       )}
 
-      {/* Duration bar (for duration-only tokens without easing) */}
+      {/* Duration bar */}
       {!hasEasing && hasDuration && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="flex flex-col gap-1">
           <DurationBar duration={token.duration!} maxDuration={maxDuration} />
-          <div
-            style={{
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              color: '#6B7280',
-            }}
-          >
+          <div className="text-xs font-mono text-gray-500 dark:text-gray-400">
             {token.duration}ms
           </div>
         </div>
@@ -338,30 +225,16 @@ function MotionCard({
         />
       )}
 
-      {/* Raw value if nothing was parsed */}
+      {/* Raw value fallback */}
       {!hasEasing && !hasDuration && (
-        <div
-          style={{
-            fontSize: '12px',
-            fontFamily: 'monospace',
-            color: '#6B7280',
-            padding: '8px',
-            backgroundColor: '#F9FAFB',
-            borderRadius: '6px',
-          }}
-        >
+        <div className="text-xs font-mono text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
           {token.value}
         </div>
       )}
 
       {/* Usage */}
       {token.usage && (
-        <div
-          style={{
-            fontSize: '11px',
-            color: '#9CA3AF',
-          }}
-        >
+        <div className="text-[11px] text-gray-400 dark:text-gray-500">
           {token.usage}
         </div>
       )}
@@ -386,52 +259,28 @@ export function MotionPreview({ section }: { section: TokenSection }) {
 
   if (motionTokens.length === 0) return null;
 
-  // Separate easing tokens and duration tokens for grouping
   const easingTokens = motionTokens.filter((t) => t.easing);
   const durationTokens = motionTokens.filter((t) => !t.easing && t.duration !== null);
   const otherTokens = motionTokens.filter((t) => !t.easing && t.duration === null);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Easing tokens */}
+    <div className="flex flex-col gap-4">
       {easingTokens.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
+        <div className="flex flex-wrap gap-3">
           {easingTokens.map((token, i) => (
             <MotionCard key={`e-${i}`} token={token} maxDuration={maxDuration} />
           ))}
         </div>
       )}
-
-      {/* Duration tokens */}
       {durationTokens.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
+        <div className="flex flex-wrap gap-3">
           {durationTokens.map((token, i) => (
             <MotionCard key={`d-${i}`} token={token} maxDuration={maxDuration} />
           ))}
         </div>
       )}
-
-      {/* Other tokens (unparseable) */}
       {otherTokens.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
+        <div className="flex flex-wrap gap-3">
           {otherTokens.map((token, i) => (
             <MotionCard key={`o-${i}`} token={token} maxDuration={maxDuration} />
           ))}

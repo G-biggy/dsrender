@@ -199,6 +199,17 @@ function processContent(nodes: Content[], section: TokenSection, contextType: Se
           return inlineToText(child as unknown as Content);
         }).join('\n');
       });
+
+      // Try to extract color tokens from list items
+      // Pattern: "**Name** (`#hex`): Description" or "Name (#hex): Description"
+      const colorTokens = extractColorsFromListItems(items);
+      if (colorTokens.length > 0 && (section.type === 'colors' || contextType === 'colors')) {
+        section.tokens.push(...colorTokens);
+      } else if (colorTokens.length > 0 && section.type === 'unknown') {
+        section.tokens.push(...colorTokens);
+        section.type = 'colors';
+      }
+
       section.content.push({
         kind: 'list',
         items,
@@ -218,6 +229,33 @@ function processContent(nodes: Content[], section: TokenSection, contextType: Se
       section.content.push({ kind: 'thematicBreak' });
     }
   }
+}
+
+/**
+ * Extract color tokens from list items with patterns like:
+ * - **Name** (`#hex`): Description
+ * - Name (#hex): Description
+ * - **Name** (`rgba(...)`)
+ */
+function extractColorsFromListItems(items: string[]): TokenEntry[] {
+  const tokens: TokenEntry[] = [];
+  const colorPattern = /^(?:\*\*)?([^*(`]+?)(?:\*\*)?\s*\(?[`']?(#[0-9a-fA-F]{3,8}|rgba?\s*\([^)]+\))[`']?\)?\s*:?\s*(.*)/;
+
+  for (const item of items) {
+    const match = item.match(colorPattern);
+    if (match) {
+      const name = match[1].trim().replace(/\*\*/g, '');
+      const value = match[2].trim();
+      const usage = match[3]?.trim().replace(/^[:\-–—]\s*/, '') || undefined;
+      tokens.push({ name, value, usage, extra: {} });
+    }
+  }
+
+  // Only return if a significant portion of items had colors
+  if (tokens.length > 0 && tokens.length >= items.length * 0.3) {
+    return tokens;
+  }
+  return [];
 }
 
 function inferTypeFromTokens(tokens: TokenEntry[]): SectionType | null {

@@ -10,7 +10,6 @@ import {
   type ComponentKind,
 } from '@/lib/parser/css-props-parser';
 
-/** Strip numbered prefixes like "7.1", "####", parenthetical notes */
 function cleanLabel(raw: string): string {
   return raw
     .replace(/^#+\s*/, '')
@@ -19,25 +18,13 @@ function cleanLabel(raw: string): string {
     .trim();
 }
 
-/** Showcase wrapper — gives every component a visible container with checkerboard-style bg */
 function Showcase({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div
-        style={{
-          backgroundColor: '#F9FAFB',
-          border: '1px solid #E5E7EB',
-          borderRadius: '12px',
-          padding: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '60px',
-        }}
-      >
+    <div className="flex flex-col gap-2">
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 flex items-center justify-center min-h-[60px]">
         {children}
       </div>
-      <div style={{ fontSize: '11px', color: '#9CA3AF', paddingLeft: '4px' }}>
+      <div className="text-[11px] text-gray-400 dark:text-gray-500 pl-1">
         {cleanLabel(label)}
       </div>
     </div>
@@ -57,7 +44,7 @@ export function ComponentPreview({ section }: { section: TokenSection }) {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="flex flex-col gap-8">
       {allSubs.map((sub, i) => (
         <ComponentGroup key={i} heading={sub.heading} content={sub.content} subsections={sub.subsections} />
       ))}
@@ -86,10 +73,10 @@ function ComponentGroup({
   if (codeBlocks.length > 0 && kind !== 'unknown') {
     return (
       <div>
-        <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#6B7280', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
           {cleanLabel(heading)}
         </h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start' }}>
+        <div className="flex flex-wrap gap-4 items-start">
           {codeBlocks.map((block, j) => {
             const propsBlocks = parseCSSPropsFromCode(block.code!);
             return <ComponentRender key={j} kind={kind} blocks={propsBlocks} label={heading} />;
@@ -102,20 +89,20 @@ function ComponentGroup({
   if (nestedGroups.length > 0) {
     return (
       <div>
-        <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#6B7280', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wide">
           {cleanLabel(heading)}
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="flex flex-col gap-6">
           {nestedGroups.map((ng, k) => {
             const effectiveKind = ng.kind !== 'unknown' ? ng.kind : kind;
 
             if (ng.nested.length > 0) {
               return (
                 <div key={k}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '12px' }}>
+                  <div className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-3">
                     {cleanLabel(ng.heading)}
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start' }}>
+                  <div className="flex flex-wrap gap-4 items-start">
                     {ng.nested.map((deep, d) => {
                       const deepKind = detectComponentKind(deep.heading) !== 'unknown' ? detectComponentKind(deep.heading) : effectiveKind;
                       const deepCode = deep.content.filter((c) => c.kind === 'code' && c.code);
@@ -133,10 +120,10 @@ function ComponentGroup({
 
             return (
               <div key={k}>
-                <div style={{ fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '12px' }}>
+                <div className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-3">
                   {cleanLabel(ng.heading)}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start' }}>
+                <div className="flex flex-wrap gap-4 items-start">
                   {ng.codeBlocks.map((block, b) => {
                     const propsBlocks = parseCSSPropsFromCode(block.code!);
                     return <ComponentRender key={b} kind={effectiveKind} blocks={propsBlocks} label={ng.heading} />;
@@ -177,8 +164,6 @@ function ComponentRender({ kind, blocks, label }: { kind: ComponentKind; blocks:
   }
 }
 
-// ── BUTTON ──────────────────────────────────────────────
-
 function ButtonPreview({
   baseStyle,
   hoverStyle,
@@ -192,7 +177,6 @@ function ButtonPreview({
 }) {
   const [hovered, setHovered] = useState(false);
   const style = hovered && hoverStyle ? { ...baseStyle, ...hoverStyle } : baseStyle;
-
   const buttonText = cleanLabel(label).replace(/button/i, '').trim() || 'Button';
 
   return (
@@ -215,8 +199,6 @@ function ButtonPreview({
     </Showcase>
   );
 }
-
-// ── INPUT ───────────────────────────────────────────────
 
 function InputPreview({
   baseStyle,
@@ -245,11 +227,9 @@ function InputPreview({
   );
 }
 
-// ── CARD ────────────────────────────────────────────────
-
 function CardPreview({ blocks, label }: { blocks: CSSPropsBlock[]; label: string }) {
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+    <div className="flex flex-wrap gap-4">
       {blocks.map((block, i) => {
         const style = cssPropsToReactStyle(block.styles);
         return (
@@ -266,8 +246,8 @@ function CardPreview({ blocks, label }: { blocks: CSSPropsBlock[]; label: string
                 border: style.border || '1px solid #E5E7EB',
               }}
             >
-              <div style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Card Title</div>
-              <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>Description text</div>
+              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">Card Title</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">Description text</div>
             </div>
           </Showcase>
         );
@@ -275,8 +255,6 @@ function CardPreview({ blocks, label }: { blocks: CSSPropsBlock[]; label: string
     </div>
   );
 }
-
-// ── TABS ────────────────────────────────────────────────
 
 function TabPreview({ states, label }: { states: CSSPropsBlock[]; label: string }) {
   const containerBlock = states.find((b) => /container/i.test(b.label));
@@ -291,7 +269,6 @@ function TabPreview({ states, label }: { states: CSSPropsBlock[]; label: string 
     ? cssPropsToReactStyle(activeBlock.styles)
     : { padding: '8px 16px', borderRadius: '8px', background: 'white', color: '#1F2937', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' };
 
-  // Ensure inactive has visible text
   if (!inactiveStyle.color || inactiveStyle.color === 'transparent') {
     inactiveStyle.color = '#6B7280';
   }
@@ -307,8 +284,6 @@ function TabPreview({ states, label }: { states: CSSPropsBlock[]; label: string 
   );
 }
 
-// ── TOGGLE ──────────────────────────────────────────────
-
 function TogglePreview({ states, label }: { states: CSSPropsBlock[]; label: string }) {
   const containerBlock = states.find((b) => /container/i.test(b.label));
   const inactiveBlock = states.find((b) => /inactive/i.test(b.label));
@@ -322,7 +297,6 @@ function TogglePreview({ states, label }: { states: CSSPropsBlock[]; label: stri
     ? cssPropsToReactStyle(activeBlock.styles)
     : { padding: '6px 12px', borderRadius: '6px', background: '#F97316', color: 'white', fontSize: '14px' };
 
-  // Ensure inactive text is visible
   if (!inactiveStyle.color || inactiveStyle.color === 'transparent') {
     inactiveStyle.color = '#6B7280';
   }
@@ -337,8 +311,6 @@ function TogglePreview({ states, label }: { states: CSSPropsBlock[]; label: stri
     </Showcase>
   );
 }
-
-// ── GENERIC ─────────────────────────────────────────────
 
 function GenericPreview({
   baseStyle,

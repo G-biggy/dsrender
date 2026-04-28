@@ -11,7 +11,6 @@ export function LayoutPreview({ section }: { section: TokenSection }) {
 
   if (allTokens.length === 0) return null;
 
-  // Separate dimension tokens (have px values) from non-dimension tokens
   const dimensionTokens = allTokens
     .map((t) => ({
       name: t.name,
@@ -31,65 +30,24 @@ export function LayoutPreview({ section }: { section: TokenSection }) {
     : 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Dimension tokens as horizontal bars */}
+    <div className="flex flex-col gap-4">
       {dimensionTokens.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="flex flex-col gap-2.5">
           {dimensionTokens.map((token, i) => {
             const widthPct = Math.max((token.px! / maxPx) * 100, 6);
             return (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
-                {/* Label */}
-                <div
-                  style={{
-                    width: '120px',
-                    flexShrink: 0,
-                    textAlign: 'right',
-                  }}
-                >
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-[120px] shrink-0 text-right">
+                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                     {token.name}
                   </div>
                 </div>
-                {/* Bar */}
-                <div
-                  style={{
-                    flex: 1,
-                    height: '28px',
-                    backgroundColor: '#F3F4F6',
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    position: 'relative',
-                  }}
-                >
+                <div className="flex-1 h-7 bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden relative">
                   <div
-                    style={{
-                      width: `${widthPct}%`,
-                      height: '100%',
-                      backgroundColor: '#818CF8',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      paddingRight: '8px',
-                      minWidth: '50px',
-                    }}
+                    className="h-full bg-indigo-400 rounded-md flex items-center justify-end pr-2 min-w-[50px]"
+                    style={{ width: `${widthPct}%` }}
                   >
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        fontFamily: 'monospace',
-                        color: '#FFFFFF',
-                      }}
-                    >
+                    <span className="text-[11px] font-semibold font-mono text-white">
                       {token.value}
                     </span>
                   </div>
@@ -100,34 +58,21 @@ export function LayoutPreview({ section }: { section: TokenSection }) {
         </div>
       )}
 
-      {/* Non-dimension tokens as info cards */}
       {otherTokens.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
+        <div className="flex flex-wrap gap-3">
           {otherTokens.map((token, i) => (
             <div
               key={i}
-              style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                minWidth: '160px',
-              }}
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 min-w-[160px]"
             >
-              <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>
+              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                 {token.name}
               </div>
-              <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#6B7280', marginTop: '2px' }}>
+              <div className="text-xs font-mono text-gray-500 dark:text-gray-400 mt-0.5">
                 {token.value}
               </div>
               {token.usage && (
-                <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                   {token.usage}
                 </div>
               )}
