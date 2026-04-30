@@ -27,6 +27,12 @@ interface ParsedTypography {
   lineHeight?: string;
 }
 
+interface FontFamily {
+  name: string;
+  stack: string;
+  role?: string;
+}
+
 /**
  * Parse a fenced code block written as `Key: Value` lines, e.g.:
  *
@@ -36,8 +42,6 @@ interface ParsedTypography {
  *     Line-H:   1.0
  *     Spacing:  -1.92px
  *     Color:    #ffffff
- *
- * Returns null if no usable size could be extracted.
  */
 function parseCodeBlockAsPreset(role: string, code: string, sectionFont?: string): ParsedTypography | null {
   const fields: Record<string, string> = {};
@@ -55,26 +59,6 @@ function parseCodeBlockAsPreset(role: string, code: string, sectionFont?: string
     weight: get('weight', 'font weight', 'font-weight', 'fontweight'),
     lineHeight: get('line-h', 'line height', 'line-height', 'lineheight'),
   };
-}
-
-/** Walk a typography section (and its subsections recursively) collecting specimens. */
-function collectSpecimens(section: TokenSection, sectionFont?: string): ParsedTypography[] {
-  const out: ParsedTypography[] = [];
-  for (const t of section.tokens) {
-    const spec = parseTypographyEntry(t, sectionFont);
-    if (spec.size) out.push(spec);
-  }
-  for (const sub of section.subsections) {
-    if (sub.tokens.length === 0) {
-      const codeBlock = sub.content.find((b) => b.kind === 'code' && b.code);
-      if (codeBlock?.code) {
-        const preset = parseCodeBlockAsPreset(sub.heading, codeBlock.code, sectionFont);
-        if (preset) out.push(preset);
-      }
-    }
-    out.push(...collectSpecimens(sub, sectionFont));
-  }
-  return out;
 }
 
 function parseTypographyEntry(entry: TokenEntry, sectionFont?: string): ParsedTypography {
@@ -111,6 +95,100 @@ function parseTypographyEntry(entry: TokenEntry, sectionFont?: string): ParsedTy
   return result;
 }
 
+/** A font family token has a stack-like value (commas, multiple names) and no size. */
+function looksLikeFontStack(value: string): boolean {
+  if (/^\d/.test(value)) return false;
+  return value.includes(',') || /\bsans-?serif\b|\bserif\b|\bmonospace\b/i.test(value);
+}
+
+function tokensToFontFamilies(tokens: TokenEntry[]): FontFamily[] {
+  return tokens
+    .filter((t) => looksLikeFontStack(t.value) || looksLikeFontStack(t.extra.stack || ''))
+    .map((t) => {
+      const stack = t.extra.stack || t.value;
+      const role = t.extra.role || t.extra.usage || t.usage;
+      return { name: t.name, stack, role };
+    });
+}
+
+function tokensToSpecimens(tokens: TokenEntry[], sectionFont?: string): ParsedTypography[] {
+  return tokens
+    .map((t) => parseTypographyEntry(t, sectionFont))
+    .filter((s) => !!s.size);
+}
+
+function classifySubsection(heading: string): 'font-family' | 'scale' | 'presets' | 'other' {
+  const h = heading.toLowerCase();
+  if (/family|families|fonts?\b|stack/.test(h)) return 'font-family';
+  if (/scale|sizes?|tokens?/.test(h)) return 'scale';
+  if (/presets?|roles?|styles?|specimens?/.test(h)) return 'presets';
+  return 'other';
+}
+
+interface CollectedSpecimens {
+  fontFamilies: FontFamily[];
+  scale: ParsedTypography[];
+  presets: ParsedTypography[];
+}
+
+function collectAll(section: TokenSection, sectionFont?: string): CollectedSpecimens {
+  const result: CollectedSpecimens = { fontFamilies: [], scale: [], presets: [] };
+
+  // Section-level tokens default to "scale"
+  for (const spec of tokensToSpecimens(section.tokens, sectionFont)) {
+    result.scale.push(spec);
+  }
+
+  for (const sub of section.subsections) {
+    const kind = classifySubsection(sub.heading);
+
+    if (kind === 'font-family') {
+      result.fontFamilies.push(...tokensToFontFamilies(sub.tokens));
+      continue;
+    }
+
+    if (kind === 'scale') {
+      result.scale.push(...tokensToSpecimens(sub.tokens, sectionFont));
+      continue;
+    }
+
+    if (kind === 'presets') {
+      // Subsections of "Presets" are typically named preset blocks (Hero, Body, etc.)
+      // each with a Key:Value code block.
+      for (const presetSub of sub.subsections) {
+        const codeBlock = presetSub.content.find((b) => b.kind === 'code' && b.code);
+        if (codeBlock?.code) {
+          const preset = parseCodeBlockAsPreset(presetSub.heading, codeBlock.code, sectionFont);
+          if (preset) result.presets.push(preset);
+        }
+        // Also support tokens-as-presets if someone uses a table inside
+        result.presets.push(...tokensToSpecimens(presetSub.tokens, sectionFont));
+      }
+      // And a code block directly under "Presets" with a single preset
+      const directCode = sub.content.find((b) => b.kind === 'code' && b.code);
+      if (directCode?.code) {
+        const preset = parseCodeBlockAsPreset(sub.heading, directCode.code, sectionFont);
+        if (preset) result.presets.push(preset);
+      }
+      result.presets.push(...tokensToSpecimens(sub.tokens, sectionFont));
+      continue;
+    }
+
+    // Fallback: treat unclassified subsections as scale-ish
+    result.scale.push(...tokensToSpecimens(sub.tokens, sectionFont));
+    // Also walk one level deeper for code-block presets
+    for (const inner of sub.subsections) {
+      const codeBlock = inner.content.find((b) => b.kind === 'code' && b.code);
+      if (codeBlock?.code) {
+        const preset = parseCodeBlockAsPreset(inner.heading, codeBlock.code, sectionFont);
+        if (preset) result.presets.push(preset);
+      }
+    }
+  }
+
+  return result;
+}
+
 function extractSectionFont(section: TokenSection): string | undefined {
   const fontMatch = section.rawMarkdown?.match(/\*\*Font family:\*\*\s*(.+)/i)
     || section.rawMarkdown?.match(/Font family:\s*(.+)/i);
@@ -118,7 +196,7 @@ function extractSectionFont(section: TokenSection): string | undefined {
   return undefined;
 }
 
-const SYSTEM_FONTS = ['helvetica', 'arial', 'system-ui', 'sans-serif', 'serif', 'monospace', 'inherit', 'menlo', 'georgia', 'courier'];
+const SYSTEM_FONTS = ['helvetica', 'arial', 'system-ui', 'sans-serif', 'serif', 'monospace', 'inherit', 'menlo', 'georgia', 'courier', 'times'];
 
 function loadGoogleFont(fontName: string) {
   if (typeof document === 'undefined') return;
@@ -133,58 +211,155 @@ function loadGoogleFont(fontName: string) {
   document.head.appendChild(link);
 }
 
+function firstFontName(stack: string | undefined): string | undefined {
+  if (!stack) return undefined;
+  return stack.split(',')[0].replace(/['"`]/g, '').trim();
+}
+
 function useGoogleFonts(fontNames: (string | undefined)[]) {
   const key = fontNames.filter(Boolean).join('|');
   useEffect(() => {
     for (const name of fontNames) {
-      if (name) loadGoogleFont(name.split(',')[0].replace(/['"]/g, '').trim());
+      const first = firstFontName(name);
+      if (first) loadGoogleFont(first);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 }
 
+const SUB_HEADING_STYLE: React.CSSProperties = {
+  fontSize: '13px',
+  fontWeight: 600,
+  color: '#6B7280',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  marginBottom: '14px',
+};
+
+function SpecimenItem({ spec }: { spec: ParsedTypography }) {
+  return (
+    <div style={{ borderBottom: '1px solid #F3F4F6', paddingBottom: '20px' }}>
+      <div
+        style={{
+          fontFamily: spec.font ? `"${firstFontName(spec.font)}", ${spec.font}, sans-serif` : 'inherit',
+          fontSize: spec.size,
+          fontWeight: spec.weight ? parseWeight(spec.weight) : 400,
+          lineHeight: spec.lineHeight || 1.3,
+          color: '#1F2937',
+          marginBottom: '8px',
+          overflowWrap: 'break-word',
+        }}
+      >
+        {SAMPLE_TEXT}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          gap: '16px',
+          flexWrap: 'wrap',
+          fontSize: '12px',
+          color: '#9CA3AF',
+          fontFamily: 'monospace',
+        }}
+      >
+        <span style={{ color: '#6B7280', fontWeight: 600 }}>{spec.role}</span>
+        {spec.font && <span>{firstFontName(spec.font)}</span>}
+        {spec.size && <span>{spec.size}</span>}
+        {spec.weight && <span>w{spec.weight}</span>}
+        {spec.lineHeight && <span>/{spec.lineHeight}</span>}
+      </div>
+    </div>
+  );
+}
+
+function FontFamilyCard({ family }: { family: FontFamily }) {
+  const first = firstFontName(family.stack);
+  return (
+    <div
+      style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E5E7EB',
+        borderRadius: '12px',
+        padding: '20px 24px',
+        flex: '1 1 240px',
+        minWidth: '240px',
+        maxWidth: '420px',
+      }}
+    >
+      <div
+        style={{
+          fontFamily: first ? `"${first}", ${family.stack}, sans-serif` : 'inherit',
+          fontSize: '32px',
+          lineHeight: 1.1,
+          color: '#1F2937',
+          marginBottom: '10px',
+        }}
+      >
+        {first || 'Aa'}
+      </div>
+      <div style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>
+        {family.name}
+      </div>
+      <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#9CA3AF', marginBottom: family.role ? '8px' : 0, wordBreak: 'break-word' }}>
+        {family.stack}
+      </div>
+      {family.role && (
+        <div style={{ fontSize: '11px', color: '#6B7280', lineHeight: 1.4 }}>
+          {family.role}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TypographySpecimen({ section }: { section: TokenSection }) {
   const sectionFont = extractSectionFont(section);
-  const specimens = collectSpecimens(section, sectionFont);
-  useGoogleFonts([sectionFont, ...specimens.map((s) => s.font)]);
+  const { fontFamilies, scale, presets } = collectAll(section, sectionFont);
 
-  if (specimens.length === 0) return null;
+  const allFonts = [
+    sectionFont,
+    ...fontFamilies.map((f) => f.stack),
+    ...scale.map((s) => s.font),
+    ...presets.map((p) => p.font),
+  ];
+  useGoogleFonts(allFonts);
+
+  if (fontFamilies.length === 0 && scale.length === 0 && presets.length === 0) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {specimens.map((spec, i) => (
-        <div key={i} style={{ borderBottom: '1px solid #F3F4F6', paddingBottom: '20px' }}>
-          <div
-            style={{
-              fontFamily: spec.font ? `"${spec.font}", sans-serif` : 'inherit',
-              fontSize: spec.size,
-              fontWeight: spec.weight ? parseWeight(spec.weight) : 400,
-              lineHeight: spec.lineHeight || 1.3,
-              color: '#1F2937',
-              marginBottom: '8px',
-              overflowWrap: 'break-word',
-            }}
-          >
-            {SAMPLE_TEXT}
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              gap: '16px',
-              flexWrap: 'wrap',
-              fontSize: '12px',
-              color: '#9CA3AF',
-              fontFamily: 'monospace',
-            }}
-          >
-            <span style={{ color: '#6B7280', fontWeight: 600 }}>{spec.role}</span>
-            {spec.font && <span>{spec.font}</span>}
-            {spec.size && <span>{spec.size}</span>}
-            {spec.weight && <span>w{spec.weight}</span>}
-            {spec.lineHeight && <span>/{spec.lineHeight}</span>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {fontFamilies.length > 0 && (
+        <div>
+          <div style={SUB_HEADING_STYLE}>Font Families</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+            {fontFamilies.map((family, i) => (
+              <FontFamilyCard key={i} family={family} />
+            ))}
           </div>
         </div>
-      ))}
+      )}
+
+      {scale.length > 0 && (
+        <div>
+          <div style={SUB_HEADING_STYLE}>Scale</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {scale.map((spec, i) => (
+              <SpecimenItem key={i} spec={spec} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {presets.length > 0 && (
+        <div>
+          <div style={SUB_HEADING_STYLE}>Presets</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {presets.map((spec, i) => (
+              <SpecimenItem key={i} spec={spec} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
