@@ -1,4 +1,6 @@
-# dsrender
+# dsrender — Design System Render
+
+**Live at: [dsrender.ghayyath.com](https://dsrender.ghayyath.com)**
 
 A live visual viewer for design system markdown files. Paste a `DESIGN.md` and instantly see your tokens rendered as color swatches, type specimens, spacing scales, shadow cards, motion previews, components, and more.
 
@@ -42,15 +44,6 @@ Some token kinds may be misrepresented or skipped if dsrender doesn't yet have a
 
 dsrender works with both YAML frontmatter (Google Labs `design.md` spec, M3 naming) and standard markdown with CSS code blocks (Tailwind naming). It picks tokens out of either format.
 
-## Running locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
 ## Privacy
 
 dsrender runs entirely in your browser. Your markdown content is stored only in `localStorage`. Nothing is sent to a server. The "Request a renderer" flow opens an email or GitHub issue — only what you choose to paste in there leaves your machine.
@@ -59,9 +52,24 @@ dsrender runs entirely in your browser. Your markdown content is stored only in 
 
 Next.js 16, React 19, TypeScript, Tailwind CSS 4 (chrome only), CodeMirror 6 (editor), Lucide icons.
 
+## Contributing / running locally
+
+```bash
+git clone https://github.com/G-biggy/dsrender.git
+cd dsrender
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+If you build a new renderer or fix a bug, PRs are welcome. If a token type you care about doesn't render correctly, open an issue with the failing section pasted in.
+
 ## Credits
 
-Sample design systems generated with [getdesign.md](https://getdesign.md) by [VoltAgent](https://github.com/VoltAgent/voltagent), following the [design.md](https://github.com/google-labs-code/design.md) specification by Google Labs.
+Built by [Ghayyath Huzayen](https://ghayyath.com) with significant collaboration from Claude (Anthropic) — pairing on architecture, parser work, and the renderer set.
+
+Bundled sample design systems follow the [design.md](https://github.com/google-labs-code/design.md) specification by Google Labs. The [Atmospheric Glass](public/samples/google-atmospheric-glass-DESIGN.md) sample uses the YAML frontmatter format from that spec; the others use markdown with CSS code blocks.
 
 ## License
 
