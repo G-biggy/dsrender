@@ -91,28 +91,37 @@ export function Toolbar({ onReset, onLoadSample, onShowWelcome }: ToolbarProps) 
       </div>
 
       <div className="flex items-center gap-2">
-        <div ref={dropdownRef} className="relative">
-          <ToolbarButton onClick={() => setSampleOpen(!sampleOpen)} title="Load a sample design system">
-            Samples
-            <ChevronDown size={12} />
+        {SAMPLE_FILES.length === 1 ? (
+          <ToolbarButton
+            onClick={() => onLoadSample(SAMPLE_FILES[0].file)}
+            title={`Load the ${SAMPLE_FILES[0].name} sample`}
+          >
+            Load sample
           </ToolbarButton>
-          {sampleOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 min-w-[180px] z-50">
-              {SAMPLE_FILES.map((sample) => (
-                <button
-                  key={sample.file}
-                  onClick={() => {
-                    onLoadSample(sample.file);
-                    setSampleOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-[13px] text-gray-300 bg-transparent border-none cursor-pointer hover:bg-gray-700 transition-colors"
-                >
-                  {sample.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div ref={dropdownRef} className="relative">
+            <ToolbarButton onClick={() => setSampleOpen(!sampleOpen)} title="Load a sample design system">
+              Samples
+              <ChevronDown size={12} />
+            </ToolbarButton>
+            {sampleOpen && (
+              <div className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 min-w-[180px] z-50">
+                {SAMPLE_FILES.map((sample) => (
+                  <button
+                    key={sample.file}
+                    onClick={() => {
+                      onLoadSample(sample.file);
+                      setSampleOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-[13px] text-gray-300 bg-transparent border-none cursor-pointer hover:bg-gray-700 transition-colors"
+                  >
+                    {sample.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <ToolbarButton onClick={() => setShowRequestModal(true)} title="Request a renderer">
           <MessageSquarePlus size={14} />

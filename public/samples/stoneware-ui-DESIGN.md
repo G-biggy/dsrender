@@ -1,6 +1,6 @@
 # Stoneware UI
 
-A warm, light design system for product surfaces. Demonstrates layered shadows, glow effect states, fluid container layout, and a generous radius scale that runs from sharp tiles to fully pill-shaped.
+A warm, light design system for product surfaces. Covers the full token surface — colors, typography, spacing, radius, shadows, glow effects, layout, breakpoints, z-index, motion, and components.
 
 ---
 
@@ -172,6 +172,56 @@ Interactive glow effect on focus-target elements.
 | Container Max | 1440px | Largest container width |
 | Container | `clamp(992px, 100vw, 1440px)` | Fluid container |
 | Size Unit | 16px | Base unit for fluid type calculations |
+
+---
+
+## Breakpoints
+
+| Token | Value |
+|-------|-------|
+| `xs` | 340px |
+| `sm` | 479px |
+| `md` | 767px |
+| `lg` | 991px |
+| `xl` | 1200px |
+
+---
+
+## Z-Index
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| Behind | -1 | Decorative backgrounds |
+| Base | 1 | Default stacking |
+| Raised | 5 | Elevated surfaces |
+| Dropdown | 10 | Menus and popovers |
+| Sticky | 100 | Sticky headers |
+| Overlay | 10000 | Modals and sheets |
+
+---
+
+## Motion
+
+### Duration
+
+| Token | Value |
+|-------|-------|
+| Fast | 100ms |
+| Default | 200ms |
+| Medium | 300ms |
+| Slow | 400ms |
+| Slowest | 600ms |
+| Fade | 700ms |
+
+### Easing
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| Ease Out | `ease-out` | Simple state transitions |
+| Smooth | `cubic-bezier(0.215, 0.61, 0.355, 1)` | Borders, colors, transforms |
+| Snappy | `cubic-bezier(0.38, 0.005, 0.215, 1)` | Background and color swaps |
+| Expressive | `cubic-bezier(0.625, 0.05, 0, 1)` | Transforms, grid choreography |
+| Linear | `linear` | Opacity fades |
 
 ---
 

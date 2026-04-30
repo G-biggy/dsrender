@@ -1,5 +1,4 @@
 export const SAMPLE_FILES = [
-  { name: 'Northwind Editorial', file: 'northwind-editorial-DESIGN.md' },
   { name: 'Stoneware UI', file: 'stoneware-ui-DESIGN.md' },
 ] as const;
 
