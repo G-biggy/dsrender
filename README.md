@@ -56,10 +56,6 @@ Next.js 16, React 19, TypeScript, Tailwind CSS 4 (chrome only), CodeMirror 6 (ed
 
 PRs welcome — especially new renderers or fixes for token types that don't render correctly. If a token kind you care about doesn't render, [open an issue](https://github.com/G-biggy/dsrender/issues/new) with the failing section pasted in.
 
-## Credits
-
-Built by [Ghayyath Huzayen](https://ghayyath.com) with significant collaboration from Claude (Anthropic) — pairing on architecture, parser work, and the renderer set.
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
