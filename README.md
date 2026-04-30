@@ -50,20 +50,11 @@ dsrender runs entirely in your browser. Your markdown content is stored only in 
 
 ## Stack
 
-Next.js 16, React 19, TypeScript, Tailwind CSS 4 (chrome only), CodeMirror 6 (editor), Lucide icons.
+Next.js 16, React 19, TypeScript, Tailwind CSS 4 (chrome only), CodeMirror 6 (editor), Lucide icons (chrome only — toolbar, modal).
 
-## Contributing / running locally
+## Contributing
 
-```bash
-git clone https://github.com/G-biggy/dsrender.git
-cd dsrender
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-If you build a new renderer or fix a bug, PRs are welcome. If a token type you care about doesn't render correctly, open an issue with the failing section pasted in.
+PRs welcome — especially new renderers or fixes for token types that don't render correctly. If a token kind you care about doesn't render, [open an issue](https://github.com/G-biggy/dsrender/issues/new) with the failing section pasted in.
 
 ## Credits
 
