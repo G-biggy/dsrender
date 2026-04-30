@@ -191,7 +191,7 @@ function SectionBlock({ section, designMap, specimenColor }: { section: TokenSec
         <ContentRenderer blocks={section.content} />
       )}
 
-      {section.type !== 'components' && section.type !== 'icons' && hasSubsections && section.subsections.map((sub, i) => (
+      {section.type !== 'components' && section.type !== 'icons' && section.type !== 'typography' && hasSubsections && section.subsections.map((sub, i) => (
         <SubsectionBlock key={i} subsection={sub} parentType={section.type} designMap={designMap} specimenColor={specimenColor} />
       ))}
     </div>
