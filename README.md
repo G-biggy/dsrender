@@ -60,8 +60,6 @@ PRs welcome — especially new renderers or fixes for token types that don't ren
 
 Built by [Ghayyath Huzayen](https://ghayyath.com) with significant collaboration from Claude (Anthropic) — pairing on architecture, parser work, and the renderer set.
 
-Bundled sample design systems follow the [design.md](https://github.com/google-labs-code/design.md) specification by Google Labs. The [Atmospheric Glass](public/samples/google-atmospheric-glass-DESIGN.md) sample uses the YAML frontmatter format from that spec; the others use markdown with CSS code blocks.
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
