@@ -3,6 +3,9 @@
  * E.g.: "background: white;\npadding: 12px 24px;\nborder-radius: 16px;"
  */
 
+import type { TokenMap } from '@/types';
+import { resolveVar } from '@/lib/design-resolver';
+
 const CSS_PROP_REGEX = /^\s*([\w-]+)\s*:\s*(.+?)\s*;?\s*$/;
 
 export interface CSSPropsBlock {
@@ -71,18 +74,26 @@ export function detectComponentKind(heading: string): ComponentKind {
 }
 
 /**
- * Convert CSS property names to React camelCase style keys
+ * Convert CSS property names to React camelCase style keys.
+ * When a designMap is provided, var() references are resolved against
+ * the actual tokens defined in the document.
  */
-export function cssPropsToReactStyle(styles: Record<string, string>): React.CSSProperties {
+export function cssPropsToReactStyle(styles: Record<string, string>, designMap?: TokenMap): React.CSSProperties {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(styles)) {
     // Convert kebab-case to camelCase
     const camelKey = key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 
-    // Resolve var() references to placeholder values
     let resolvedValue = value;
-    if (value.includes('var(')) {
-      resolvedValue = resolveVarPlaceholder(key, value);
+    if (value.includes('var(') && designMap && designMap.size > 0) {
+      // Resolve var() references, handling nested var(--a, var(--b)) by iterating
+      // from innermost outward until no var() remains
+      let prev = '';
+      while (resolvedValue.includes('var(') && resolvedValue !== prev) {
+        prev = resolvedValue;
+        // Match innermost var() first (no nested parens inside)
+        resolvedValue = resolvedValue.replace(/var\(--[^()]+\)/g, (match) => resolveVar(designMap, match));
+      }
     }
 
     result[camelKey] = resolvedValue;
@@ -90,49 +101,22 @@ export function cssPropsToReactStyle(styles: Record<string, string>): React.CSSP
   return result as React.CSSProperties;
 }
 
-function resolveVarPlaceholder(prop: string, value: string): string {
-  // Try to extract a meaningful fallback from the var name
-  const varMatch = value.match(/var\(--([^)]+)\)/);
-  if (!varMatch) return value;
+/**
+ * Detect whether a code block is JSX/TSX rather than CSS properties.
+ * JSX blocks should not be parsed as component CSS specs.
+ */
+export function isJSXCodeBlock(code: string): boolean {
+  // Strip comments before checking
+  const withoutComments = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
+  const lines = withoutComments.split('\n').map(l => l.trim()).filter(Boolean);
 
-  const varName = varMatch[1].toLowerCase();
-
-  // Color-related vars
-  if (prop === 'background' || prop === 'background-color' || prop === 'color' || prop === 'border-color') {
-    // Check numbered grays (most specific first to avoid gray-50 matching gray-500)
-    if (/gray-900\b/.test(varName)) return '#111827';
-    if (/gray-800\b/.test(varName)) return '#1F2937';
-    if (/gray-700\b/.test(varName)) return '#374151';
-    if (/gray-600\b/.test(varName)) return '#4B5563';
-    if (/gray-500\b/.test(varName)) return '#6B7280';
-    if (/gray-400\b/.test(varName)) return '#9CA3AF';
-    if (/gray-300\b/.test(varName)) return '#D1D5DB';
-    if (/gray-200\b/.test(varName)) return '#E5E7EB';
-    if (/gray-100\b/.test(varName)) return '#F3F4F6';
-    if (/gray-50\b/.test(varName)) return '#F9FAFB';
-    // Brand colors (check numbered variants first)
-    if (/primary-700\b/.test(varName)) return '#C2410C';
-    if (/primary-600\b/.test(varName)) return '#EA580C';
-    if (/primary-500\b/.test(varName)) return '#F97316';
-    if (/primary-100\b/.test(varName)) return '#FFEDD5';
-    if (/primary-50\b/.test(varName)) return '#FFF7ED';
-    if (varName.includes('primary')) return '#F97316';
-    // Semantic colors
-    if (varName.includes('error') || varName.includes('red')) return '#EF4444';
-    if (varName.includes('success') || varName.includes('green')) return '#22C55E';
-    if (varName.includes('warning') || varName.includes('yellow')) return '#F59E0B';
-    if (varName.includes('info') || varName.includes('blue')) return '#3B82F6';
-    if (varName.includes('accent')) return '#9810FA';
-    return '#6B7280';
+  let jsxSignals = 0;
+  for (const line of lines) {
+    if (/className[={]/.test(line)) jsxSignals += 2;
+    if (/^<\w/.test(line) || /\/>$/.test(line)) jsxSignals++;
+    if (/^import\s/.test(line) || /^export\s/.test(line)) jsxSignals += 2;
+    if (/\{\.\.\./.test(line)) jsxSignals++; // spread props
   }
 
-  // Shadow vars
-  if (prop === 'box-shadow') {
-    if (varName.includes('sm')) return '0 1px 2px rgba(0,0,0,0.05)';
-    if (varName.includes('md')) return '0 4px 6px rgba(0,0,0,0.1)';
-    if (varName.includes('lg')) return '0 10px 15px rgba(0,0,0,0.1)';
-    if (varName.includes('xl')) return '0 20px 25px rgba(0,0,0,0.15)';
-  }
-
-  return value;
+  return jsxSignals >= 2;
 }

@@ -1,38 +1,48 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { injectSpecimenLine } from '@/lib/specimen';
+
+// Polyfill deprecated matchMedia methods before CodeMirror loads.
+// CodeMirror's DOMObserver uses addListener which was removed in modern browsers.
+if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+  const origMatchMedia = window.matchMedia.bind(window);
+  window.matchMedia = function (query: string) {
+    const mql = origMatchMedia(query);
+    if (mql && !mql.addListener) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mql.addListener = (cb: any) => mql.addEventListener('change', cb);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mql.removeListener = (cb: any) => mql.removeEventListener('change', cb);
+    }
+    return mql;
+  } as typeof window.matchMedia;
+}
 
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
-  isDark?: boolean;
 }
 
-export function MarkdownEditor({ value, onChange, isDark = false }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewRef = useRef<any>(null);
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  const valueRef = useRef(value);
   const initCompleteRef = useRef(false);
   const pendingValueRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      const mql = window.matchMedia('(max-width: 0px)');
-      if (!mql.addListener) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (MediaQueryList.prototype as any).addListener = function (cb: any) {
-          this.addEventListener('change', cb);
-        };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (MediaQueryList.prototype as any).removeListener = function (cb: any) {
-          this.removeEventListener('change', cb);
-        };
-      }
-    }
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
 
     let destroyed = false;
     initCompleteRef.current = false;
@@ -44,32 +54,15 @@ export function MarkdownEditor({ value, onChange, isDark = false }: MarkdownEdit
         { markdown },
         { oneDark },
         { defaultKeymap, history, historyKeymap },
-        { syntaxHighlighting, HighlightStyle },
-        { tags },
       ] = await Promise.all([
         import('@codemirror/state'),
         import('@codemirror/view'),
         import('@codemirror/lang-markdown'),
         import('@codemirror/theme-one-dark'),
         import('@codemirror/commands'),
-        import('@codemirror/language'),
-        import('@lezer/highlight'),
       ]);
 
       if (destroyed || !containerRef.current) return;
-
-      const lightTheme = EditorView.theme({
-        '&': { height: '100%', fontSize: '13px' },
-        '.cm-scroller': {
-          fontFamily: '"SF Mono", "Fira Code", "Fira Mono", Menlo, monospace',
-          overflow: 'auto',
-        },
-        '.cm-content': { padding: '16px 0', color: '#1F2937' },
-        '.cm-gutters': { borderRight: 'none', color: '#9CA3AF', backgroundColor: '#FAFAFA' },
-        '.cm-activeLineGutter': { backgroundColor: '#F3F4F6' },
-        '.cm-activeLine': { backgroundColor: '#F8FAFC' },
-        '.cm-placeholder': { color: '#9CA3AF' },
-      });
 
       const darkTheme = EditorView.theme({
         '&': { height: '100%', fontSize: '13px' },
@@ -98,37 +91,31 @@ export function MarkdownEditor({ value, onChange, isDark = false }: MarkdownEdit
               const reader = new FileReader();
               reader.onload = (ev) => {
                 const text = ev.target?.result as string;
-                if (text) onChangeRef.current(text);
+                if (text) onChangeRef.current(injectSpecimenLine(text));
               };
               reader.readAsText(file);
               return true;
             }
             return false;
           },
+          paste(event, view) {
+            // Inject specimen line only when pasting into an empty editor.
+            // Once the user has content, leave their pastes pristine.
+            if (view.state.doc.length > 0) return false;
+            const text = event.clipboardData?.getData('text/plain');
+            if (!text) return false;
+            event.preventDefault();
+            const next = injectSpecimenLine(text);
+            view.dispatch({
+              changes: { from: 0, to: view.state.doc.length, insert: next },
+              selection: { anchor: next.length },
+            });
+            onChangeRef.current(next);
+            return true;
+          },
         }),
-        ...(isDark
-          ? [oneDark, darkTheme]
-          : [
-              syntaxHighlighting(HighlightStyle.define([
-                { tag: tags.heading, color: '#111827', fontWeight: '700' },
-                { tag: tags.heading1, color: '#111827', fontWeight: '700', fontSize: '1.2em' },
-                { tag: tags.heading2, color: '#1F2937', fontWeight: '700' },
-                { tag: tags.heading3, color: '#374151', fontWeight: '600' },
-                { tag: tags.strong, color: '#1F2937', fontWeight: '700' },
-                { tag: tags.emphasis, color: '#1F2937', fontStyle: 'italic' },
-                { tag: tags.link, color: '#2563EB', textDecoration: 'underline' },
-                { tag: tags.url, color: '#2563EB' },
-                { tag: tags.monospace, color: '#D97706', backgroundColor: '#FEF3C7', borderRadius: '3px' },
-                { tag: tags.comment, color: '#6B7280' },
-                { tag: tags.meta, color: '#6B7280' },
-                { tag: tags.processingInstruction, color: '#9CA3AF' },
-                { tag: tags.content, color: '#1F2937' },
-                { tag: tags.string, color: '#059669' },
-                { tag: tags.keyword, color: '#7C3AED' },
-                { tag: tags.definition(tags.variableName), color: '#2563EB' },
-              ])),
-              lightTheme,
-            ]),
+        oneDark,
+        darkTheme,
         keymap.of([...defaultKeymap, ...historyKeymap]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -137,8 +124,7 @@ export function MarkdownEditor({ value, onChange, isDark = false }: MarkdownEdit
         }),
       ];
 
-      // Use pending value if one arrived during init, otherwise empty
-      const initialDoc = pendingValueRef.current ?? '';
+      const initialDoc = pendingValueRef.current ?? valueRef.current ?? '';
       pendingValueRef.current = null;
 
       const state = EditorState.create({
@@ -165,12 +151,10 @@ export function MarkdownEditor({ value, onChange, isDark = false }: MarkdownEdit
       }
       initCompleteRef.current = false;
     };
-  }, [isDark]);
+  }, []);
 
-  // Sync external value changes
   useEffect(() => {
     if (!initCompleteRef.current || !viewRef.current) {
-      // Editor not ready — store for when init completes
       pendingValueRef.current = value;
       return;
     }
@@ -187,7 +171,7 @@ export function MarkdownEditor({ value, onChange, isDark = false }: MarkdownEdit
   return (
     <div
       ref={containerRef}
-      className="h-full overflow-hidden bg-white dark:bg-[#282c34]"
+      className="h-full overflow-hidden bg-[#282c34]"
     />
   );
 }

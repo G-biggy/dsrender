@@ -19,32 +19,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="en" className="h-full">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var t = localStorage.getItem('dsrender-theme');
-                  if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch(e) {}
-                try {
-                  if (window.matchMedia) {
-                    var mql = window.matchMedia('(max-width:0px)');
-                    if (mql && !mql.addListener) {
-                      MediaQueryList.prototype.addListener = function(cb) { this.addEventListener('change', cb); };
-                      MediaQueryList.prototype.removeListener = function(cb) { this.removeEventListener('change', cb); };
-                    }
-                  }
-                } catch(e) {}
-              })();
-            `,
-          }}
-        />
       </head>
       <body
         className={`${inter.variable} m-0 h-full font-[var(--font-inter),system-ui,sans-serif] overflow-hidden`}

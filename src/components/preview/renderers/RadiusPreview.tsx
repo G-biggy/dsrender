@@ -1,8 +1,11 @@
 'use client';
 
 import type { TokenSection } from '@/types';
+import { DEFAULT_ACCENT, tintAt } from '@/lib/render-defaults';
 
-export function RadiusPreview({ section }: { section: TokenSection }) {
+export function RadiusPreview({ section, specimenColor }: { section: TokenSection; specimenColor?: string }) {
+  const accent = specimenColor ?? DEFAULT_ACCENT;
+  const fill = tintAt(accent, 0.18);
   const allTokens = [
     ...section.tokens,
     ...section.subsections.flatMap((sub) => sub.tokens),
@@ -11,19 +14,52 @@ export function RadiusPreview({ section }: { section: TokenSection }) {
   if (allTokens.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-5 items-end">
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '20px',
+        alignItems: 'flex-end',
+      }}
+    >
       {allTokens.map((token, i) => {
         const radiusValue = token.value.trim();
         return (
-          <div key={i} className="flex flex-col items-center gap-2">
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             <div
-              className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 border-2 border-indigo-400 dark:border-indigo-500"
-              style={{ borderRadius: radiusValue }}
+              style={{
+                width: '64px',
+                height: '64px',
+                backgroundColor: fill,
+                border: `2px solid ${accent}`,
+                borderRadius: radiusValue,
+              }}
             />
-            <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">
+            <div
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#374151',
+                textAlign: 'center',
+              }}
+            >
               {token.name}
             </div>
-            <div className="text-[11px] font-mono text-gray-400 dark:text-gray-500">
+            <div
+              style={{
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                color: '#9CA3AF',
+              }}
+            >
               {radiusValue}
             </div>
           </div>

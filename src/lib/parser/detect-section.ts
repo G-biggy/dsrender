@@ -16,8 +16,6 @@ const HEADING_PATTERNS: Record<SectionType, RegExp[]> = {
   unknown: [],
 };
 
-const COLUMN_PATTERNS: Record<string, SectionType> = {};
-
 export function detectSectionByHeading(heading: string): SectionType {
   const cleaned = heading
     .replace(/^\d+\.\d*\s*/, '') // strip numbered prefixes like "2.1"

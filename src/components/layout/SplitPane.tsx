@@ -8,23 +8,35 @@ interface SplitPaneProps {
   right: React.ReactNode;
 }
 
-export function SplitPane({ left, right }: SplitPaneProps) {
-  const [splitRatio, setSplitRatio] = useState(0.45);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
+function readInitialSplitRatio(): number {
+  if (typeof window === 'undefined') return 0.45;
+  try {
     const saved = localStorage.getItem('dsrender-split');
-    if (saved) setSplitRatio(parseFloat(saved));
-    setMounted(true);
-  }, []);
+    if (saved) {
+      const n = parseFloat(saved);
+      if (!isNaN(n)) return n;
+    }
+  } catch {
+    // ignore
+  }
+  return 0.45;
+}
+
+function readInitialIsMobile(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768;
+}
+
+export function SplitPane({ left, right }: SplitPaneProps) {
+  const [splitRatio, setSplitRatio] = useState(readInitialSplitRatio);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(readInitialIsMobile);
+
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
-    check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
@@ -60,8 +72,7 @@ export function SplitPane({ left, right }: SplitPaneProps) {
   if (isMobile) {
     return (
       <div className="flex flex-col h-full">
-        {/* Tab bar */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="flex border-b border-gray-700 bg-gray-900">
           {(['editor', 'preview'] as const).map((tab) => (
             <button
               key={tab}
@@ -69,15 +80,14 @@ export function SplitPane({ left, right }: SplitPaneProps) {
               className={cn(
                 'flex-1 py-2.5 text-[13px] font-semibold border-none bg-transparent cursor-pointer capitalize',
                 activeTab === tab
-                  ? 'text-gray-900 dark:text-gray-100 border-b-2 border-b-gray-900 dark:border-b-gray-100'
-                  : 'text-gray-400 dark:text-gray-500 border-b-2 border-b-transparent'
+                  ? 'text-gray-100 border-b-2 border-b-gray-100'
+                  : 'text-gray-500 border-b-2 border-b-transparent'
               )}
             >
               {tab}
             </button>
           ))}
         </div>
-        {/* Content */}
         <div className="flex-1 overflow-hidden">
           <div className={cn('h-full', activeTab === 'editor' ? 'block' : 'hidden')}>
             {left}
@@ -103,14 +113,11 @@ export function SplitPane({ left, right }: SplitPaneProps) {
       {/* Left pane */}
       <div className="overflow-hidden min-w-0">{left}</div>
 
-      {/* Resize handle */}
       <div
         onMouseDown={handleMouseDown}
         className={cn(
           'cursor-col-resize z-10 transition-colors',
-          isDragging
-            ? 'bg-blue-500'
-            : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+          isDragging ? 'bg-blue-500' : 'bg-gray-700 hover:bg-gray-600'
         )}
       />
 

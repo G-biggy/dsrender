@@ -31,28 +31,32 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
     >
       <div
         ref={modalRef}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-[90%] p-8 relative animate-[scaleIn_0.2s_ease-out]"
+        className="bg-gray-900 rounded-2xl shadow-2xl max-w-md w-[90%] p-8 relative animate-[scaleIn_0.2s_ease-out]"
       >
-        {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 bg-transparent border-none cursor-pointer transition-colors"
+          className="absolute top-4 right-4 p-1 text-gray-500 hover:text-gray-300 bg-transparent border-none cursor-pointer transition-colors"
         >
           <X size={18} />
         </button>
 
-        {/* Content */}
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+        <h2 className="text-xl font-bold text-gray-100 mb-1">
           Design System Render
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mb-6">
+        <p className="text-sm text-gray-400 font-mono mb-6">
           dsrender
         </p>
 
-        <div className="flex flex-col gap-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        <div className="flex flex-col gap-4 text-sm text-gray-300 leading-relaxed">
           <p>
-            Paste your <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono">DESIGN.md</code> and
+            Paste your <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded font-mono">DESIGN.md</code> and
             instantly see your design tokens rendered as visual previews: color swatches, typography specimens, spacing scales, shadows, components, and more.
+          </p>
+
+          <p>
+            Specimens that don&apos;t have a color in your markdown — spacing tiles, z-index layers, glow halos, breakpoint marks — render in the color from the{' '}
+            <code className="text-xs bg-gray-800 px-1.5 py-0.5 rounded font-mono">## dsrender spec</code>{' '}
+            section at the top of your file. Edit the hex to recolor them. That section is hidden from the rendered output.
           </p>
 
           <p>
@@ -61,15 +65,14 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
             button in the toolbar to let us know what&apos;s missing.
           </p>
 
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-gray-500">
             Load a sample from the toolbar to see it in action.
           </p>
         </div>
 
-        {/* Dismiss */}
         <button
           onClick={onClose}
-          className="mt-6 w-full py-2.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-semibold rounded-lg border-none cursor-pointer transition-colors hover:bg-gray-800 dark:hover:bg-gray-200"
+          className="mt-6 w-full py-2.5 bg-gray-100 text-gray-900 text-sm font-semibold rounded-lg border-none cursor-pointer transition-colors hover:bg-gray-200"
         >
           Got it
         </button>

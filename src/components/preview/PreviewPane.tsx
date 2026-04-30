@@ -1,6 +1,9 @@
 'use client';
 
-import type { DesignTokenDocument, TokenSection } from '@/types';
+import { useMemo } from 'react';
+import type { DesignTokenDocument, TokenSection, TokenMap } from '@/types';
+import { buildDesignMap } from '@/lib/design-resolver';
+import { DEFAULT_ACCENT } from '@/lib/render-defaults';
 import { ColorSwatches } from './renderers/ColorSwatches';
 import { TypographySpecimen } from './renderers/TypographySpecimen';
 import { SpacingScale } from './renderers/SpacingScale';
@@ -15,7 +18,9 @@ import { EffectsPreview } from './renderers/EffectsPreview';
 import { LayoutPreview } from './renderers/LayoutPreview';
 import { ZIndexPreview } from './renderers/ZIndexPreview';
 
-const TOKEN_RENDERERS: Record<string, React.ComponentType<{ section: TokenSection }>> = {
+type RendererProps = { section: TokenSection; designMap?: TokenMap; specimenColor?: string };
+
+const TOKEN_RENDERERS: Record<string, React.ComponentType<RendererProps>> = {
   colors: ColorSwatches,
   typography: TypographySpecimen,
   spacing: SpacingScale,
@@ -31,9 +36,24 @@ const TOKEN_RENDERERS: Record<string, React.ComponentType<{ section: TokenSectio
 };
 
 export function PreviewPane({ document }: { document: DesignTokenDocument | null }) {
+  const designMap = useMemo<TokenMap>(
+    () => (document ? buildDesignMap(document) : new Map()),
+    [document],
+  );
+
   if (!document) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500 text-sm">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          backgroundColor: '#FAFAFA',
+          color: '#9CA3AF',
+          fontSize: '14px',
+        }}
+      >
         Start typing to see your design system
       </div>
     );
@@ -42,24 +62,76 @@ export function PreviewPane({ document }: { document: DesignTokenDocument | null
   return (
     <div
       id="preview-pane"
-      className="p-8 overflow-y-auto h-full bg-gray-50 dark:bg-gray-950"
+      style={{
+        padding: '32px',
+        overflowY: 'auto',
+        height: '100%',
+        backgroundColor: '#FAFAFA',
+      }}
     >
-      {/* Document title */}
-      <h1 className="text-[28px] font-bold text-gray-900 dark:text-gray-100 mb-8 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+      <h1
+        style={{
+          fontSize: '28px',
+          fontWeight: 700,
+          color: '#111827',
+          marginBottom: '32px',
+          paddingBottom: '16px',
+          borderBottom: '2px solid #E5E7EB',
+        }}
+      >
         {document.title}
       </h1>
 
-      {/* Sections */}
-      <div className="flex flex-col gap-10">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
         {document.sections.map((section, i) => (
-          <SectionBlock key={i} section={section} />
+          <SectionBlock
+            key={i}
+            section={section}
+            designMap={designMap}
+            specimenColor={document.specimenColor}
+          />
         ))}
       </div>
+
+      <DefaultColorNote effective={document.specimenColor ?? DEFAULT_ACCENT} />
     </div>
   );
 }
 
-function SectionBlock({ section }: { section: TokenSection }) {
+function DefaultColorNote({ effective }: { effective: string }) {
+  return (
+    <div
+      style={{
+        marginTop: '64px',
+        paddingTop: '20px',
+        borderTop: '1px solid #E5E7EB',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '10px',
+        fontSize: '11px',
+        color: '#9CA3AF',
+        lineHeight: 1.5,
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-block',
+          width: '12px',
+          height: '12px',
+          borderRadius: '50%',
+          backgroundColor: effective,
+          flexShrink: 0,
+          marginTop: '2px',
+        }}
+      />
+      <span>
+        Specimens without a color in your markdown — spacing tiles, z-index layers, glow halos, breakpoint marks — render in <code style={{ fontFamily: 'monospace', color: '#6B7280' }}>{effective}</code>. Edit the hex inside the <code style={{ fontFamily: 'monospace', color: '#6B7280' }}>## dsrender spec</code> section in your markdown to change it.
+      </span>
+    </div>
+  );
+}
+
+function SectionBlock({ section, designMap, specimenColor }: { section: TokenSection; designMap: TokenMap; specimenColor?: string }) {
   const TokenRenderer = TOKEN_RENDERERS[section.type];
   const hasTokens =
     section.tokens.length > 0 ||
@@ -71,10 +143,30 @@ function SectionBlock({ section }: { section: TokenSection }) {
 
   return (
     <div>
-      {/* Section heading */}
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+      <h2
+        style={{
+          fontSize: '20px',
+          fontWeight: 600,
+          color: '#374151',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}
+      >
         {section.type !== 'unknown' && (
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 500,
+              color: '#9CA3AF',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              backgroundColor: '#F3F4F6',
+              padding: '2px 8px',
+              borderRadius: '4px',
+            }}
+          >
             {section.type}
           </span>
         )}
@@ -82,7 +174,7 @@ function SectionBlock({ section }: { section: TokenSection }) {
       </h2>
 
       {section.type === 'components' && (hasContent || hasSubsections) && (
-        <ComponentPreview section={section} />
+        <ComponentPreview section={section} designMap={designMap} />
       )}
 
       {section.type === 'icons' && (hasContent || hasSubsections || hasTokens) && (
@@ -90,8 +182,8 @@ function SectionBlock({ section }: { section: TokenSection }) {
       )}
 
       {TokenRenderer && hasTokens && section.type !== 'components' && section.type !== 'icons' && (
-        <div className={hasContent ? 'mb-5' : ''}>
-          <TokenRenderer section={section} />
+        <div style={{ marginBottom: hasContent ? '20px' : 0 }}>
+          <TokenRenderer section={section} designMap={designMap} specimenColor={specimenColor} />
         </div>
       )}
 
@@ -100,13 +192,13 @@ function SectionBlock({ section }: { section: TokenSection }) {
       )}
 
       {section.type !== 'components' && section.type !== 'icons' && hasSubsections && section.subsections.map((sub, i) => (
-        <SubsectionBlock key={i} subsection={sub} parentType={section.type} />
+        <SubsectionBlock key={i} subsection={sub} parentType={section.type} designMap={designMap} specimenColor={specimenColor} />
       ))}
     </div>
   );
 }
 
-function SubsectionBlock({ subsection, parentType }: { subsection: TokenSection; parentType: string }) {
+function SubsectionBlock({ subsection, parentType, designMap, specimenColor }: { subsection: TokenSection; parentType: string; designMap: TokenMap; specimenColor?: string }) {
   const TokenRenderer = TOKEN_RENDERERS[subsection.type];
   const hasTokens = subsection.tokens.length > 0;
   const hasContent = subsection.content.length > 0;
@@ -117,14 +209,14 @@ function SubsectionBlock({ subsection, parentType }: { subsection: TokenSection;
   if (!hasTokens && !hasContent && !hasNestedSubs) return null;
 
   return (
-    <div className="mt-5">
-      <h3 className="text-base font-semibold text-gray-600 dark:text-gray-400 mb-3">
+    <div style={{ marginTop: '20px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#4B5563', marginBottom: '12px' }}>
         {subsection.heading}
       </h3>
 
       {TokenRenderer && hasTokens && (
-        <div className={hasContent ? 'mb-3' : ''}>
-          <TokenRenderer section={subsection} />
+        <div style={{ marginBottom: hasContent ? '12px' : 0 }}>
+          <TokenRenderer section={subsection} designMap={designMap} specimenColor={specimenColor} />
         </div>
       )}
 
@@ -133,7 +225,7 @@ function SubsectionBlock({ subsection, parentType }: { subsection: TokenSection;
       )}
 
       {hasNestedSubs && subsection.subsections.map((nested, i) => (
-        <SubsectionBlock key={i} subsection={nested} parentType={subsection.type} />
+        <SubsectionBlock key={i} subsection={nested} parentType={subsection.type} designMap={designMap} specimenColor={specimenColor} />
       ))}
     </div>
   );

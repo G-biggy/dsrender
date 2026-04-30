@@ -4,22 +4,29 @@ import remarkGfm from 'remark-gfm';
 import type { Root } from 'mdast';
 import type { DesignTokenDocument, TokenSection, TokenEntry, SectionType } from '@/types';
 import { extractSections } from './extractors';
+import { extractSpecimenColor, stripDsrenderSpec } from '@/lib/specimen';
 
 const processor = unified().use(remarkParse).use(remarkGfm);
 
 export function parseDesignSystem(markdown: string): DesignTokenDocument {
+  const specimenColor = extractSpecimenColor(markdown) ?? undefined;
+
+  // Strip the `## dsrender spec` section so the parser/renderer never sees it.
+  const stripped = stripDsrenderSpec(markdown);
+
   // Check for YAML frontmatter
-  const yamlResult = tryParseYAMLFrontmatter(markdown);
+  const yamlResult = tryParseYAMLFrontmatter(stripped);
   if (yamlResult) {
-    return yamlResult;
+    return { ...yamlResult, specimenColor };
   }
 
-  const tree = processor.parse(markdown) as Root;
+  const tree = processor.parse(stripped) as Root;
   const { title, sections } = extractSections(tree);
 
   return {
     title: title || 'Untitled Design System',
     sections,
+    specimenColor,
   };
 }
 

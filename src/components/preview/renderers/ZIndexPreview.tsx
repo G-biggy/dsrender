@@ -1,6 +1,7 @@
 'use client';
 
 import type { TokenSection } from '@/types';
+import { DEFAULT_ACCENT } from '@/lib/render-defaults';
 
 interface ZToken {
   name: string;
@@ -8,17 +9,27 @@ interface ZToken {
   usage?: string;
 }
 
-const LAYER_COLORS = [
-  { bg: '#E0E7FF', border: '#C7D2FE', text: '#4338CA' },
-  { bg: '#C7D2FE', border: '#A5B4FC', text: '#4338CA' },
-  { bg: '#A5B4FC', border: '#818CF8', text: '#312E81' },
-  { bg: '#818CF8', border: '#6366F1', text: '#FFFFFF' },
-  { bg: '#6366F1', border: '#4F46E5', text: '#FFFFFF' },
-  { bg: '#4F46E5', border: '#4338CA', text: '#FFFFFF' },
-  { bg: '#4338CA', border: '#3730A3', text: '#FFFFFF' },
-];
+/**
+ * Layer color = single accent color at varying opacity.
+ * Higher index (deeper in stack) = denser fill.
+ */
+function layerColor(index: number, total: number, accent: string) {
+  const base = accent.startsWith('#') && (accent.length === 7 || accent.length === 4) ? accent : DEFAULT_ACCENT;
+  const t = total <= 1 ? 1 : index / (total - 1);
+  const minOp = 0.18;
+  const maxOp = 1.0;
+  const op = minOp + (maxOp - minOp) * t;
+  const hex = Math.round(op * 255).toString(16).padStart(2, '0');
+  const bg = `${base}${hex}`;
+  const borderOp = Math.min(op + 0.15, 1);
+  const borderHex = Math.round(borderOp * 255).toString(16).padStart(2, '0');
+  const border = `${base}${borderHex}`;
+  const text = op > 0.55 ? '#FFFFFF' : '#312E81';
+  return { bg, border, text };
+}
 
-export function ZIndexPreview({ section }: { section: TokenSection }) {
+export function ZIndexPreview({ section, specimenColor }: { section: TokenSection; specimenColor?: string }) {
+  const accent = specimenColor ?? DEFAULT_ACCENT;
   const allTokens = [
     ...section.tokens,
     ...section.subsections.flatMap((sub) => sub.tokens),
@@ -35,55 +46,76 @@ export function ZIndexPreview({ section }: { section: TokenSection }) {
 
   if (zTokens.length === 0) return null;
 
-  const layerGap = 36;
   const layerHeight = 40;
+  const layerGap = 36;
   const totalStackHeight = (zTokens.length - 1) * layerGap + layerHeight;
 
   return (
-    <div className="flex items-start gap-10 py-6">
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '40px',
+        padding: '24px 0',
+      }}
+    >
       {/* Isometric 3D stack */}
       <div
-        className="min-w-[280px] flex items-center justify-center"
         style={{
           perspective: '800px',
           perspectiveOrigin: '50% 40%',
+          minWidth: '280px',
           height: `${totalStackHeight + 80}px`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <div
-          className="relative"
           style={{
             transformStyle: 'preserve-3d',
             transform: 'rotateX(55deg) rotateZ(-45deg)',
+            position: 'relative',
             width: '160px',
             height: '160px',
           }}
         >
           {zTokens.map((token, i) => {
-            const colorIdx = Math.min(i, LAYER_COLORS.length - 1);
-            const color = LAYER_COLORS[colorIdx];
+            const color = layerColor(i, zTokens.length, accent);
             const yOffset = i * layerGap;
 
             return (
               <div
                 key={i}
-                className="absolute w-[160px] h-[160px] rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.12)] flex items-center justify-center backface-hidden"
                 style={{
+                  position: 'absolute',
+                  width: '160px',
+                  height: '160px',
                   backgroundColor: color.bg,
                   border: `2px solid ${color.border}`,
+                  borderRadius: '8px',
                   transform: `translateZ(${yOffset}px)`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backfaceVisibility: 'hidden',
                 }}
               >
                 <span
-                  className="text-[13px] font-bold text-center leading-tight pointer-events-none"
                   style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
                     color: color.text,
                     transform: 'rotateZ(45deg)',
+                    textAlign: 'center',
+                    lineHeight: '1.2',
+                    pointerEvents: 'none',
                   }}
                 >
                   {token.name}
                   <br />
-                  <span className="text-[11px] font-medium opacity-70">
+                  <span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.7 }}>
                     {token.value}
                   </span>
                 </span>
@@ -93,33 +125,57 @@ export function ZIndexPreview({ section }: { section: TokenSection }) {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-col gap-1.5 pt-2">
-        <div className="flex items-center gap-1.5 mb-1">
-          <svg width="12" height="16" viewBox="0 0 12 16" fill="#6366F1">
+      {/* Legend — flat list alongside the 3D view */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          paddingTop: '8px',
+        }}
+      >
+        {/* Arrow label */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginBottom: '4px',
+          }}
+        >
+          <svg width="12" height="16" viewBox="0 0 12 16" fill={accent}>
             <polygon points="6,0 12,8 8,8 8,16 4,16 4,8 0,8" />
           </svg>
-          <span className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wide">
+          <span style={{ fontSize: '10px', fontWeight: 600, color: accent, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Higher z-index
           </span>
         </div>
         {[...zTokens].reverse().map((token, i) => {
           const origIdx = zTokens.length - 1 - i;
-          const colorIdx = Math.min(origIdx, LAYER_COLORS.length - 1);
-          const color = LAYER_COLORS[colorIdx];
+          const color = layerColor(origIdx, zTokens.length, accent);
           return (
-            <div key={i} className="flex items-center gap-2">
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
               <div
-                className="w-3.5 h-3.5 rounded-[3px] shrink-0"
                 style={{
+                  width: '14px',
+                  height: '14px',
                   backgroundColor: color.bg,
                   border: `1.5px solid ${color.border}`,
+                  borderRadius: '3px',
+                  flexShrink: 0,
                 }}
               />
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 min-w-[70px]">
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151', minWidth: '70px' }}>
                 {token.name}
               </span>
-              <span className="text-[11px] font-mono text-gray-400 dark:text-gray-500">
+              <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#9CA3AF' }}>
                 {token.value}
               </span>
             </div>

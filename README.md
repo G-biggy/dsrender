@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# dsrender
 
-## Getting Started
+A live visual viewer for design system markdown files. Paste a `DESIGN.md` and instantly see your tokens rendered as color swatches, type specimens, spacing scales, shadow cards, motion previews, components, and more.
 
-First, run the development server:
+dsrender is split-pane: editor on the left, live render on the right. Edit and see updates instantly. Drag a `.md` file onto the editor to load it. Load one of the bundled samples from the toolbar to see the rendering in action.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## How dsrender works
+
+dsrender renders **only what's in your markdown** — it doesn't invent values, fall back to brand guesses, or pull anything from a live design API. If your file describes a color, it shows that color. If it doesn't, the specimen renders in dsrender's neutral default (indigo `#6366F1`) so the shape is still visible.
+
+That default lives in the auto-injected `## dsrender spec` section at the top of your file:
+
+```markdown
+## dsrender spec
+
+specimen: #6366F1
+
+Edit the hex above to recolor decorative previews — spacing tiles, z-index layers, glow halos, breakpoint marks — wherever your design system doesn't specify a color.
+
+---
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Edit the hex to anything (e.g. `#22c55e` for green, `#ec4899` for pink) and every decorative specimen retints in real time. The section is hidden from the rendered output — it's metadata for dsrender, not part of your design system.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Some token kinds may be misrepresented or skipped if dsrender doesn't yet have a renderer for them — chips, tags, complex tables, and unusual layouts are common gaps. If you hit one, hit the **Request a renderer** button in the toolbar and send a copy of the failing section. New renderers ship as the gaps surface.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What it renders
 
-## Learn More
+- **Colors** — swatches with hex, name, usage
+- **Typography** — live specimens with custom Google Fonts loaded automatically
+- **Spacing** — scaled tiles
+- **Border radius** — shape previews
+- **Shadows** — shadow cards
+- **Motion** — easing curves, duration bars, animated dots
+- **Effects** — glow visualizations
+- **Layout** — container ranges
+- **Z-index** — isometric 3D layer stack
+- **Breakpoints** — ruler view
+- **Components** — buttons, inputs, cards, tabs, toggles, badges (rendered from your CSS code blocks or, for prose-only sections, from token templates)
+- **Icons** — size and grid previews
+- **Tables and prose** — fallback rendering for unrecognized sections
 
-To learn more about Next.js, take a look at the following resources:
+dsrender works with both YAML frontmatter (Google Labs `design.md` spec, M3 naming) and standard markdown with CSS code blocks (Tailwind naming). It picks tokens out of either format.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Running locally
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Privacy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+dsrender runs entirely in your browser. Your markdown content is stored only in `localStorage`. Nothing is sent to a server. The "Request a renderer" flow opens an email or GitHub issue — only what you choose to paste in there leaves your machine.
+
+## Stack
+
+Next.js 16, React 19, TypeScript, Tailwind CSS 4 (chrome only), CodeMirror 6 (editor), Lucide icons.
+
+## Credits
+
+Sample design systems generated with [getdesign.md](https://getdesign.md) by [VoltAgent](https://github.com/VoltAgent/voltagent), following the [design.md](https://github.com/google-labs-code/design.md) specification by Google Labs.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

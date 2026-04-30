@@ -4,15 +4,19 @@ import { icons, type LucideIcon } from 'lucide-react';
 import type { TokenSection, ContentBlock } from '@/types';
 import { parsePxValue } from '@/lib/utils';
 
+/** Look up a Lucide icon by name (case-insensitive, handles common aliases) */
 function getLucideIcon(name: string): LucideIcon | null {
+  // Direct match
   if (name in icons) return icons[name as keyof typeof icons];
 
+  // Try PascalCase conversion: "arrow-left" → "ArrowLeft"
   const pascal = name
     .split(/[-_\s]+/)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join('');
   if (pascal in icons) return icons[pascal as keyof typeof icons];
 
+  // Case-insensitive search
   const lower = name.toLowerCase().replace(/[-_\s]/g, '');
   const match = Object.keys(icons).find(
     (k) => k.toLowerCase().replace(/[-_\s]/g, '') === lower
@@ -43,11 +47,12 @@ export function IconSizes({ section }: { section: TokenSection }) {
     ...section.subsections.flatMap((sub) => sub.content),
   ];
 
+  // Split content into icon tables (render with icons) vs other content
   const iconTables: ContentBlock[] = [];
   const otherContent: ContentBlock[] = [];
 
   for (const block of allContent) {
-    if (block.kind === 'code') continue;
+    if (block.kind === 'code') continue; // Already parsed as tokens
     if (
       block.kind === 'table' &&
       block.headers?.some((h) => /icon|name/i.test(h))
@@ -59,26 +64,33 @@ export function IconSizes({ section }: { section: TokenSection }) {
   }
 
   return (
-    <div className="flex flex-col gap-7">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Icon size visualization */}
       {sizeTokens.length > 0 && (
         <div>
-          <div className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">Sizes</div>
-          <div className="flex flex-wrap gap-6 items-end">
+          <div style={subheadingStyle}>Sizes</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-end' }}>
             {sizeTokens.map((token, i) => {
               const px = token.px ?? 16;
               const Icon = getLucideIcon('Image');
               return (
-                <div key={i} className="flex flex-col items-center gap-2">
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                   <div
-                    className="flex items-center justify-center text-gray-500 dark:text-gray-400"
-                    style={{ width: `${px}px`, height: `${px}px` }}
+                    style={{
+                      width: `${px}px`,
+                      height: `${px}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#6B7280',
+                    }}
                   >
                     {Icon ? <Icon size={px} strokeWidth={1.5} /> : (
-                      <div className="rounded bg-gray-200 dark:bg-gray-700" style={{ width: px, height: px }} />
+                      <div style={{ width: px, height: px, borderRadius: 4, backgroundColor: '#E5E7EB' }} />
                     )}
                   </div>
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">{px}px</div>
-                  <div className="text-[10px] text-gray-400 dark:text-gray-500">{token.usage || token.name}</div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>{px}px</div>
+                  <div style={{ fontSize: '10px', color: '#9CA3AF' }}>{token.usage || token.name}</div>
                 </div>
               );
             })}
@@ -86,17 +98,19 @@ export function IconSizes({ section }: { section: TokenSection }) {
         </div>
       )}
 
+      {/* Icon tables — render actual icons next to names */}
       {iconTables.map((table, i) => (
         <div key={i}>
           <IconTable block={table} />
         </div>
       ))}
 
+      {/* Other content (paragraphs, etc.) */}
       {otherContent.length > 0 && (
-        <div className="flex flex-col gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {otherContent.map((block, i) => {
             if (block.kind === 'paragraph') {
-              return <p key={i} className="text-sm text-gray-700 dark:text-gray-300 m-0">{block.text}</p>;
+              return <p key={i} style={{ fontSize: '14px', color: '#374151', margin: 0 }}>{block.text}</p>;
             }
             return null;
           })}
@@ -109,13 +123,20 @@ export function IconSizes({ section }: { section: TokenSection }) {
 function IconTable({ block }: { block: ContentBlock }) {
   if (!block.headers || !block.rows) return null;
 
+  // Find which column has the icon name
   const iconColIdx = block.headers.findIndex((h) => /icon.*name|name/i.test(h));
   const purposeColIdx = block.headers.findIndex((h) => /purpose|usage|description/i.test(h));
 
   return (
     <div>
-      <div className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">Library</div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-3">
+      <div style={subheadingStyle}>Library</div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+          gap: '12px',
+        }}
+      >
         {block.rows.map((row, i) => {
           const iconName = row[iconColIdx !== -1 ? iconColIdx : 1] || '';
           const purpose = row[purposeColIdx !== -1 ? purposeColIdx : 0] || '';
@@ -124,21 +145,42 @@ function IconTable({ block }: { block: ContentBlock }) {
           return (
             <div
               key={i}
-              className="flex flex-col items-center gap-1.5 p-4 rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '16px 8px',
+                borderRadius: '8px',
+                border: '1px solid #F3F4F6',
+                backgroundColor: '#FFFFFF',
+              }}
             >
-              <div className="text-gray-700 dark:text-gray-300">
+              <div style={{ color: '#374151' }}>
                 {Icon ? (
                   <Icon size={24} strokeWidth={1.5} />
                 ) : (
-                  <div className="w-6 h-6 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 4,
+                      backgroundColor: '#F3F4F6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      color: '#9CA3AF',
+                    }}
+                  >
                     ?
                   </div>
                 )}
               </div>
-              <div className="text-[11px] font-medium text-gray-700 dark:text-gray-300 text-center">
+              <div style={{ fontSize: '11px', fontWeight: 500, color: '#374151', textAlign: 'center' }}>
                 {purpose}
               </div>
-              <div className="text-[10px] text-gray-400 dark:text-gray-500 font-mono text-center">
+              <div style={{ fontSize: '10px', color: '#9CA3AF', fontFamily: 'monospace', textAlign: 'center' }}>
                 {iconName}
               </div>
             </div>
@@ -148,3 +190,12 @@ function IconTable({ block }: { block: ContentBlock }) {
     </div>
   );
 }
+
+const subheadingStyle: React.CSSProperties = {
+  fontSize: '13px',
+  fontWeight: 600,
+  color: '#6B7280',
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  marginBottom: '16px',
+};

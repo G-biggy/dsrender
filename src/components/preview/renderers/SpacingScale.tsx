@@ -2,8 +2,10 @@
 
 import type { TokenSection } from '@/types';
 import { parsePxValue } from '@/lib/utils';
+import { DEFAULT_ACCENT } from '@/lib/render-defaults';
 
-export function SpacingScale({ section }: { section: TokenSection }) {
+export function SpacingScale({ section, specimenColor }: { section: TokenSection; specimenColor?: string }) {
+  const accent = specimenColor ?? DEFAULT_ACCENT;
   const allTokens = [
     ...section.tokens,
     ...section.subsections.flatMap((sub) => sub.tokens),
@@ -22,27 +24,64 @@ export function SpacingScale({ section }: { section: TokenSection }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-3 items-end">
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px',
+        alignItems: 'flex-end',
+      }}
+    >
       {items.map((item, i) => {
         const px = item.px ?? 0;
+        // Clamp visual size between 4px and 120px for display
         const displaySize = Math.min(Math.max(px, 4), 120);
 
         return (
-          <div key={i} className="flex flex-col items-center gap-1.5">
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            {/* Actual-sized block */}
             <div
-              className="bg-orange-500 opacity-80 min-w-1 min-h-1"
               style={{
                 width: `${displaySize}px`,
                 height: `${displaySize}px`,
+                backgroundColor: accent,
                 borderRadius: Math.min(4, displaySize / 4),
+                opacity: 0.8,
+                minWidth: '4px',
+                minHeight: '4px',
               }}
             />
-            <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 font-mono text-center">
+            {/* Value label */}
+            <div
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#374151',
+                fontFamily: 'monospace',
+                textAlign: 'center',
+              }}
+            >
               {px}
             </div>
+            {/* Token name */}
             <div
-              className="text-[10px] text-gray-400 dark:text-gray-500 text-center overflow-hidden text-ellipsis whitespace-nowrap"
-              style={{ maxWidth: `${Math.max(displaySize, 40)}px` }}
+              style={{
+                fontSize: '10px',
+                color: '#9CA3AF',
+                textAlign: 'center',
+                maxWidth: `${Math.max(displaySize, 40)}px`,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
             >
               {item.name}
             </div>

@@ -16,6 +16,8 @@ export type SectionType =
 export interface DesignTokenDocument {
   title: string;
   sections: TokenSection[];
+  /** User-overridable accent for decorative previews. Parsed from a `specimen: #COLOR` line in the markdown. */
+  specimenColor?: string;
 }
 
 export interface ContentBlock {
@@ -72,3 +74,5 @@ export interface RadiusToken extends TokenEntry {
 export interface BreakpointToken extends TokenEntry {
   px: number;
 }
+
+export type TokenMap = Map<string, string>;

@@ -10,6 +10,7 @@ export function GenericTable({ section }: { section: TokenSection }) {
 
   if (allTokens.length === 0) return null;
 
+  // Collect all unique extra keys for headers
   const extraKeys = new Set<string>();
   for (const token of allTokens) {
     for (const key of Object.keys(token.extra)) {
@@ -19,36 +20,50 @@ export function GenericTable({ section }: { section: TokenSection }) {
   const extraHeaders = Array.from(extraKeys);
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]">
+    <div style={{ overflowX: 'auto' }}>
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: '13px',
+        }}
+      >
         <thead>
           <tr>
-            <th className="text-left px-3 py-2 border-b-2 border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Name</th>
-            <th className="text-left px-3 py-2 border-b-2 border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Value</th>
+            <th style={thStyle}>Name</th>
+            <th style={thStyle}>Value</th>
             {extraHeaders.map((h) => (
-              <th key={h} className="text-left px-3 py-2 border-b-2 border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              <th key={h} style={thStyle}>
                 {h}
               </th>
             ))}
-            {allTokens.some((t) => t.usage) && <th className="text-left px-3 py-2 border-b-2 border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Usage</th>}
+            {allTokens.some((t) => t.usage) && <th style={thStyle}>Usage</th>}
           </tr>
         </thead>
         <tbody>
           {allTokens.map((token, i) => (
             <tr key={i}>
-              <td className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-                <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono">
+              <td style={tdStyle}>
+                <code
+                  style={{
+                    fontSize: '12px',
+                    backgroundColor: '#F3F4F6',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontFamily: 'monospace',
+                  }}
+                >
                   {token.name}
                 </code>
               </td>
-              <td className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-gray-100 font-mono">{token.value}</td>
+              <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{token.value}</td>
               {extraHeaders.map((h) => (
-                <td key={h} className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+                <td key={h} style={tdStyle}>
                   {token.extra[h] || ''}
                 </td>
               ))}
               {allTokens.some((t) => t.usage) && (
-                <td className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400">{token.usage || ''}</td>
+                <td style={{ ...tdStyle, color: '#6B7280' }}>{token.usage || ''}</td>
               )}
             </tr>
           ))}
@@ -57,3 +72,18 @@ export function GenericTable({ section }: { section: TokenSection }) {
     </div>
   );
 }
+
+const thStyle: React.CSSProperties = {
+  textAlign: 'left',
+  padding: '8px 12px',
+  borderBottom: '2px solid #E5E7EB',
+  fontWeight: 600,
+  color: '#374151',
+  whiteSpace: 'nowrap',
+};
+
+const tdStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  borderBottom: '1px solid #F3F4F6',
+  color: '#1F2937',
+};
